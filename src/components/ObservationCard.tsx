@@ -35,11 +35,19 @@ export function ObservationCard({ observation, onClick }: ObservationCardProps) 
       <CardContent className="p-4">
         {mediaCount > 0 && (
           <div className="relative w-full h-40 mb-3 rounded-lg overflow-hidden bg-secondary">
-            <img 
-              src={allMedia[0].thumbnailUrl || allMedia[0].url} 
-              alt="Observation media"
-              className="w-full h-full object-cover"
-            />
+            {allMedia[0].type === 'video' ? (
+              <video 
+                src={allMedia[0].url} 
+                className="w-full h-full object-cover"
+                muted
+              />
+            ) : (
+              <img 
+                src={allMedia[0].thumbnailUrl || allMedia[0].url} 
+                alt="Observation media"
+                className="w-full h-full object-cover"
+              />
+            )}
             {mediaCount > 1 && (
               <div className="absolute top-2 right-2 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-md flex items-center gap-1">
                 <Camera size={14} weight="fill" />

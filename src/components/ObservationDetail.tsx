@@ -122,11 +122,15 @@ export function ObservationDetail({ observation, open, onOpenChange, onUpdate }:
 
             {allMedia.length > 0 && (
               <div>
-                <h3 className="font-semibold mb-2">Media</h3>
+                <h3 className="font-semibold mb-2">Media ({allMedia.length})</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {allMedia.map((item) => (
                     <div key={item.id} className="aspect-video rounded-lg overflow-hidden bg-secondary">
-                      <img src={item.url} alt="Observation media" className="w-full h-full object-cover" />
+                      {item.type === 'video' ? (
+                        <video src={item.url} controls className="w-full h-full object-cover" />
+                      ) : (
+                        <img src={item.url} alt="Observation media" className="w-full h-full object-cover" />
+                      )}
                     </div>
                   ))}
                 </div>
