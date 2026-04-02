@@ -12,15 +12,17 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useIsMobile } from '@/hooks/use-mobile'
 
 function App() {
-  const [observations = [], setObservations] = useKV<Observation[]>('observations', [])
+  const [observations, setObservations] = useKV<Observation[]>('observations', [])
   const [activeTab, setActiveTab] = useState('map')
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [selectedObservation, setSelectedObservation] = useState<Observation | null>(null)
   const [mapCenter, setMapCenter] = useState<Location>({ lat: 20, lng: 0 })
   const isMobile = useIsMobile()
 
+  const safeObservations = observations || []
+
   const handleNewReport = (report: Observation) => {
-    setObservations((current = []) => [report, ...current])
+    setObservations((current) => [report, ...(current || [])])
     setIsReportOpen(false)
     setMapCenter({ lat: report.location.lat, lng: report.location.lng })
   }
@@ -82,7 +84,7 @@ function App() {
             <TabsContent value="map" className="h-full mt-0 p-4">
               <div className="h-full rounded-lg overflow-hidden border border-border shadow-lg">
                 <MapView
-                  observations={observations}
+                  observations={safeObservations}
                   center={mapCenter}
                   zoom={3}
                   onMarkerClick={handleMarkerClick}
@@ -94,7 +96,7 @@ function App() {
             <TabsContent value="gallery" className="h-full mt-0">
               <ScrollArea className="h-full">
                 <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {observations.length === 0 ? (
+                  {safeObservations.length === 0 ? (
                     <div className="col-span-full text-center py-12">
                       <p className="text-muted-foreground mb-4">No observations yet</p>
                       <Button onClick={() => setIsReportOpen(true)} variant="outline">
@@ -103,7 +105,7 @@ function App() {
                       </Button>
                     </div>
                   ) : (
-                    observations.map((obs) => (
+                    safeObservations.map((obs) => (
                       <ObservationCard
                         key={obs.id}
                         observation={obs}
@@ -234,8 +236,8 @@ function App() {
           open={!!selectedObservation}
           onOpenChange={(open: boolean) => !open && setSelectedObservation(null)}
           onUpdate={(updated: Observation) => {
-            setObservations((current = []) =>
-              current.map((obs) => (obs.id === updated.id ? updated : obs))
+            setObservations((current) =>
+              (current || []).map((obs) => (obs.id === updated.id ? updated : obs))
             )
             setSelectedObservation(updated)
           }}
