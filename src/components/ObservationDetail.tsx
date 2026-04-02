@@ -1,14 +1,12 @@
-import { useState } from 'react'
-import type { Observation, Classification, ClassificationVote, MediaFile } from '@/lib/types'
+import type { Observation, MediaFile } from '@/lib/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AudioPlayer } from '@/components/AudioPlayer'
+import { ClassificationVoting } from '@/components/ClassificationVoting'
 import { MapPin, Eye, Calendar } from '@phosphor-icons/react'
 import { formatTimestamp, formatCoordinates, getTopClassification, getClassificationLabel } from '@/lib/helpers'
-import { toast } from 'sonner'
 
 interface ObservationDetailProps {
   observation: Observation
@@ -18,52 +16,15 @@ interface ObservationDetailProps {
 }
 
 export function ObservationDetail({ observation, open, onOpenChange, onUpdate }: ObservationDetailProps) {
-  const [selectedClassification, setSelectedClassification] = useState<Classification | null>(null)
-  
   const topClassification = getTopClassification(observation)
   
-  const classificationOptions: Classification[] = [
-    'astronomical',
-    'atmospheric',
-    'weather',
-    'physics',
-    'human-made',
-    'unknown',
-  ]
-  
-  const classificationColors: Record<Classification, string> = {
+  const classificationColors = {
     astronomical: 'bg-blue-500/20 text-blue-300 border-blue-500/50',
     atmospheric: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50',
     weather: 'bg-sky-500/20 text-sky-300 border-sky-500/50',
     physics: 'bg-purple-500/20 text-purple-300 border-purple-500/50',
     'human-made': 'bg-orange-500/20 text-orange-300 border-orange-500/50',
     unknown: 'bg-gray-500/20 text-gray-300 border-gray-500/50',
-  }
-
-  const handleClassify = () => {
-    if (!selectedClassification) return
-
-    const newVote: ClassificationVote = {
-      userId: 'anonymous',
-      classification: selectedClassification,
-      confidence: 3,
-      votedAt: Date.now(),
-      upvotes: 0,
-    }
-
-    const updated = {
-      ...observation,
-      communityClassifications: [
-        ...(observation.communityClassifications || []),
-        newVote,
-      ],
-      classificationCount: (observation.classificationCount || 0) + 1,
-      updatedAt: Date.now(),
-    }
-
-    onUpdate(updated)
-    setSelectedClassification(null)
-    toast.success('Classification added')
   }
 
   const allMedia: MediaFile[] = [
@@ -172,37 +133,7 @@ export function ObservationDetail({ observation, open, onOpenChange, onUpdate }:
 
             <Separator />
 
-            <div>
-              <h3 className="font-semibold mb-3">Community Classification</h3>
-              <div className="space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  {classificationOptions.map((category) => {
-                    const count = (observation.communityClassifications || []).filter((c) => c.classification === category).length
-                    return (
-                      <Button
-                        key={category}
-                        variant={selectedClassification === category ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setSelectedClassification(category)}
-                        className={selectedClassification === category ? 'bg-accent text-accent-foreground' : ''}
-                      >
-                        {getClassificationLabel(category)}
-                        {count > 0 && <Badge className="ml-2" variant="secondary">{count}</Badge>}
-                      </Button>
-                    )
-                  })}
-                </div>
-                {selectedClassification && (
-                  <Button
-                    onClick={handleClassify}
-                    size="sm"
-                    className="bg-accent text-accent-foreground hover:bg-accent/90"
-                  >
-                    Submit Classification
-                  </Button>
-                )}
-              </div>
-            </div>
+            <ClassificationVoting observation={observation} onUpdate={onUpdate} />
           </div>
         </ScrollArea>
       </DialogContent>
