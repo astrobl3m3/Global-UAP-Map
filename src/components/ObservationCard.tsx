@@ -53,8 +53,8 @@ export function ObservationCard({ observation, onClick }: ObservationCardProps) 
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium line-clamp-2 mb-1">
-                {observation.title || observation.description.slice(0, 100)}
-                {!observation.title && observation.description.length > 100 && '...'}
+                {observation.title || observation.description?.slice(0, 100) || 'Untitled observation'}
+                {!observation.title && observation.description && observation.description.length > 100 && '...'}
               </p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <MapPin size={14} weight="fill" />
@@ -87,11 +87,11 @@ export function ObservationCard({ observation, onClick }: ObservationCardProps) 
           <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border">
             <div className="flex items-center gap-1">
               <Eye size={14} />
-              <span>{observation.viewCount}</span>
+              <span>{observation.viewCount || 0}</span>
             </div>
             <div className="flex items-center gap-1">
               <ChatCircle size={14} />
-              <span>{observation.commentCount}</span>
+              <span>{observation.commentCount || 0}</span>
             </div>
           </div>
         </div>
