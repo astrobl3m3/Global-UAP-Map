@@ -17,6 +17,8 @@ interface ReportDialogProps {
 
 export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps) {
   const [location, setLocation] = useState<Location | null>(null)
+  const [locationAccuracy, setLocationAccuracy] = useState<number>(0)
+  const [altitude, setAltitude] = useState<number | undefined>(undefined)
   const [description, setDescription] = useState('')
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [isGettingLocation, setIsGettingLocation] = useState(false)
@@ -33,9 +35,9 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
         setLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          altitude: position.coords.altitude || undefined,
         })
+        setLocationAccuracy(position.coords.accuracy)
+        setAltitude(position.coords.altitude || undefined)
         setIsGettingLocation(false)
         toast.success('Location acquired')
       },
@@ -57,25 +59,38 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
       return
     }
 
+    const now = Date.now()
     const observation: Observation = {
       id: generateId(),
-      location,
-      timestamp: Date.now(),
-      description: description.trim(),
+      userId: undefined,
       isAnonymous,
-      media: [],
-      sensorData: {},
-      classifications: [],
-      comments: [],
-      views: 0,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      observedAt: now,
+      reportedAt: now,
+      location,
+      locationAccuracy,
+      locationMethod: 'gps',
+      altitude,
+      title: description.trim().slice(0, 100),
+      description: description.trim(),
+      photos: [],
+      videos: [],
+      audio: [],
+      communityClassifications: [],
+      moderationStatus: 'approved',
+      viewCount: 0,
+      commentCount: 0,
+      classificationCount: 0,
+      visibility: 'public',
+      reportVersion: '1.0',
+      updatedAt: now,
     }
 
     onSubmit(observation)
     toast.success('Observation reported')
     
     setLocation(null)
+    setLocationAccuracy(0)
+    setAltitude(undefined)
     setDescription('')
     setIsAnonymous(false)
   }
@@ -83,6 +98,8 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
   useEffect(() => {
     if (!open) {
       setLocation(null)
+      setLocationAccuracy(0)
+      setAltitude(undefined)
       setDescription('')
       setIsAnonymous(false)
     }
@@ -118,14 +135,14 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
                 <MapPin size={18} weight="fill" className="mt-0.5 text-accent" />
                 <div className="flex-1">
                   <p className="font-mono text-sm">{formatCoordinates(location.lat, location.lng)}</p>
-                  {location.altitude && (
+                  {altitude && (
                     <p className="text-xs text-muted-foreground">
-                      Altitude: {location.altitude.toFixed(0)}m
+                      Altitude: {altitude.toFixed(0)}m
                     </p>
                   )}
-                  {location.accuracy && (
+                  {locationAccuracy > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      Accuracy: ±{location.accuracy.toFixed(0)}m
+                      Accuracy: ±{locationAccuracy.toFixed(0)}m
                     </p>
                   )}
                 </div>

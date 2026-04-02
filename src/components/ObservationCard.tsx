@@ -21,23 +21,26 @@ export function ObservationCard({ observation, onClick }: ObservationCardProps) 
     unknown: 'bg-gray-500/20 text-gray-300 border-gray-500/50',
   }
 
+  const allMedia = [...observation.photos, ...observation.videos]
+  const mediaCount = allMedia.length
+
   return (
     <Card 
       className="group cursor-pointer hover:border-accent transition-all hover:shadow-lg hover:shadow-accent/20"
       onClick={onClick}
     >
       <CardContent className="p-4">
-        {observation.media.length > 0 && (
+        {mediaCount > 0 && (
           <div className="relative w-full h-40 mb-3 rounded-lg overflow-hidden bg-secondary">
             <img 
-              src={observation.media[0].thumbnail || observation.media[0].url} 
+              src={allMedia[0].thumbnailUrl || allMedia[0].url} 
               alt="Observation media"
               className="w-full h-full object-cover"
             />
-            {observation.media.length > 1 && (
+            {mediaCount > 1 && (
               <div className="absolute top-2 right-2 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-md flex items-center gap-1">
                 <Camera size={14} weight="fill" />
-                <span className="text-xs font-mono">{observation.media.length}</span>
+                <span className="text-xs font-mono">{mediaCount}</span>
               </div>
             )}
           </div>
@@ -47,8 +50,8 @@ export function ObservationCard({ observation, onClick }: ObservationCardProps) 
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium line-clamp-2 mb-1">
-                {observation.description.slice(0, 100)}
-                {observation.description.length > 100 && '...'}
+                {observation.title || observation.description.slice(0, 100)}
+                {!observation.title && observation.description.length > 100 && '...'}
               </p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <MapPin size={14} weight="fill" />
@@ -59,22 +62,13 @@ export function ObservationCard({ observation, onClick }: ObservationCardProps) 
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {!observation.isAnonymous && observation.username && (
-                <div className="flex items-center gap-2">
-                  <Avatar className="w-5 h-5">
-                    <AvatarImage src={observation.userAvatar} />
-                    <AvatarFallback className="text-xs">
-                      {observation.username.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-xs text-muted-foreground">{observation.username}</span>
-                </div>
-              )}
-              {observation.isAnonymous && (
+              {observation.isAnonymous ? (
                 <span className="text-xs text-muted-foreground">Anonymous</span>
+              ) : (
+                <span className="text-xs text-muted-foreground">User</span>
               )}
               <span className="text-xs text-muted-foreground">•</span>
-              <span className="text-xs text-muted-foreground">{formatTimestamp(observation.timestamp)}</span>
+              <span className="text-xs text-muted-foreground">{formatTimestamp(observation.reportedAt)}</span>
             </div>
           </div>
 
@@ -90,11 +84,11 @@ export function ObservationCard({ observation, onClick }: ObservationCardProps) 
           <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border">
             <div className="flex items-center gap-1">
               <Eye size={14} />
-              <span>{observation.views}</span>
+              <span>{observation.viewCount}</span>
             </div>
             <div className="flex items-center gap-1">
               <ChatCircle size={14} />
-              <span>{observation.comments.length}</span>
+              <span>{observation.commentCount}</span>
             </div>
           </div>
         </div>
