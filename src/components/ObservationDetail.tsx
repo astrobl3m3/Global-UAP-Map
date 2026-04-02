@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { AudioPlayer } from '@/components/AudioPlayer'
 import { MapPin, Eye, Calendar } from '@phosphor-icons/react'
 import { formatTimestamp, formatCoordinates, getTopClassification, getClassificationLabel } from '@/lib/helpers'
 import { toast } from 'sonner'
@@ -155,14 +156,11 @@ export function ObservationDetail({ observation, open, onOpenChange, onUpdate }:
                       <p className="text-sm text-muted-foreground mb-2">Audio Recordings</p>
                       <div className="space-y-2">
                         {observation.audio.map((audio) => (
-                          <div key={audio.id} className="p-3 bg-secondary rounded-lg border border-border">
-                            <audio src={audio.url} controls className="w-full" />
-                            {audio.durationSeconds && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Duration: {Math.floor(audio.durationSeconds / 60)}:{(audio.durationSeconds % 60).toString().padStart(2, '0')}
-                              </p>
-                            )}
-                          </div>
+                          <AudioPlayer
+                            key={audio.id}
+                            audio={audio}
+                            compact={false}
+                          />
                         ))}
                       </div>
                     </div>

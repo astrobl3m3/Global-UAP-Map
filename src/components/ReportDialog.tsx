@@ -5,10 +5,13 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { MapPin, Crosshair, Camera, VideoCamera, X, Play, Pause, Stop, Image as ImageIcon, Microphone } from '@phosphor-icons/react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { MapPin, Crosshair, Camera, VideoCamera, X, Play, Pause, Stop, Image as ImageIcon, Microphone, Gear } from '@phosphor-icons/react'
 import { generateId, formatCoordinates } from '@/lib/helpers'
 import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { AudioPlayer } from '@/components/AudioPlayer'
 
 interface ReportDialogProps {
   open: boolean
@@ -30,6 +33,7 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
   const [isRecordingAudio, setIsRecordingAudio] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
   const [audioRecordingTime, setAudioRecordingTime] = useState(0)
+  const [audioQuality, setAudioQuality] = useState<'low' | 'medium' | 'high'>('medium')
   
   const photoInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -550,7 +554,35 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
             </div>
 
             <div className="space-y-3">
-              <Label>Audio Recording</Label>
+              <div className="flex items-center justify-between">
+                <Label>Audio Recording</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button type="button" variant="ghost" size="sm" className="h-7 gap-1.5">
+                      <Gear size={14} weight="bold" />
+                      <span className="text-xs">Quality: {audioQuality}</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56 p-3">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Recording Quality</h4>
+                      <Select value={audioQuality} onValueChange={(v) => setAudioQuality(v as 'low' | 'medium' | 'high')}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low (32 kbps)</SelectItem>
+                          <SelectItem value="medium">Medium (64 kbps)</SelectItem>
+                          <SelectItem value="high">High (128 kbps)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Higher quality = larger file size
+                      </p>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
               {!isRecordingAudio ? (
                 <Button
                   type="button"
@@ -578,25 +610,13 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
                   <p className="text-sm font-medium">Audio Recordings ({audioFiles.length})</p>
                   <div className="space-y-2">
                     {audioFiles.map((audio) => (
-                      <div key={audio.id} className="relative group p-3 bg-secondary rounded-lg border border-border">
-                        <audio
-                          src={audio.url}
-                          className="w-full"
-                          controls
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeAudio(audio.id)}
-                          className="absolute top-2 right-2 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X size={14} weight="bold" />
-                        </button>
-                        {audio.durationSeconds && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Duration: {formatRecordingTime(audio.durationSeconds)}
-                          </p>
-                        )}
-                      </div>
+                      <AudioPlayer
+                        key={audio.id}
+                        audio={audio}
+                        onRemove={removeAudio}
+                        showRemoveButton={true}
+                        compact={true}
+                      />
                     ))}
                   </div>
                 </div>
