@@ -3,17 +3,19 @@ import type { MediaFile } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Play, Pause, SpeakerHigh, X } from '@phosphor-icons/react'
+import { Play, Pause, SpeakerHigh, X, Waveform } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
+import { AudioSpectrumAnalyzer } from '@/components/AudioSpectrumAnalyzer'
 
 interface AudioPlayerProps {
   audio: MediaFile
   onRemove?: (id: string) => void
   showRemoveButton?: boolean
   compact?: boolean
+  showSpectrumAnalyzer?: boolean
 }
 
-export function AudioPlayer({ audio, onRemove, showRemoveButton = false, compact = false }: AudioPlayerProps) {
+export function AudioPlayer({ audio, onRemove, showRemoveButton = false, compact = false, showSpectrumAnalyzer = false }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -21,6 +23,7 @@ export function AudioPlayer({ audio, onRemove, showRemoveButton = false, compact
   const [playbackRate, setPlaybackRate] = useState(1)
   const [waveformData, setWaveformData] = useState<number[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [showAnalyzer, setShowAnalyzer] = useState(false)
   
   const audioRef = useRef<HTMLAudioElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -183,53 +186,71 @@ export function AudioPlayer({ audio, onRemove, showRemoveButton = false, compact
   }
 
   return (
-    <div className={cn(
-      "relative group rounded-lg border border-border bg-card/50 backdrop-blur-sm overflow-hidden",
-      compact ? "p-3" : "p-4"
-    )}>
-      <audio ref={audioRef} src={audio.url} preload="metadata" className="hidden" />
-      
-      {showRemoveButton && onRemove && (
-        <button
-          type="button"
-          onClick={() => onRemove(audio.id)}
-          className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-        >
-          <X size={14} weight="bold" />
-        </button>
-      )}
-
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            size={compact ? "sm" : "default"}
-            variant="outline"
-            onClick={togglePlayPause}
-            className="shrink-0"
-          >
-            {isPlaying ? (
-              <Pause size={compact ? 16 : 18} weight="fill" />
-            ) : (
-              <Play size={compact ? 16 : 18} weight="fill" />
+    <div className="space-y-3">
+      <div className={cn(
+        "relative group rounded-lg border border-border bg-card/50 backdrop-blur-sm overflow-hidden",
+        compact ? "p-3" : "p-4"
+      )}>
+        <audio ref={audioRef} src={audio.url} preload="metadata" className="hidden" />
+        
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2">
+            {showSpectrumAnalyzer && (
+              <Button
+                type="button"
+                size="sm"
+                variant={showAnalyzer ? "secondary" : "ghost"}
+                onClick={() => setShowAnalyzer(!showAnalyzer)}
+                className="gap-1.5 h-7"
+              >
+                <Waveform size={14} weight="bold" />
+                <span className="text-xs">{showAnalyzer ? 'Hide' : 'Show'} Spectrum</span>
+              </Button>
             )}
-          </Button>
-
-          <div className="flex-1 space-y-1">
-            <div className="text-xs text-muted-foreground flex items-center justify-between">
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(duration)}</span>
-            </div>
-            
-            <canvas
-              ref={canvasRef}
-              width={compact ? 300 : 400}
-              height={compact ? 40 : 60}
-              className="w-full h-10 rounded cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={handleWaveformClick}
-            />
           </div>
+          
+          {showRemoveButton && onRemove && (
+            <button
+              type="button"
+              onClick={() => onRemove(audio.id)}
+              className="p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X size={14} weight="bold" />
+            </button>
+          )}
         </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              size={compact ? "sm" : "default"}
+              variant="outline"
+              onClick={togglePlayPause}
+              className="shrink-0"
+            >
+              {isPlaying ? (
+                <Pause size={compact ? 16 : 18} weight="fill" />
+              ) : (
+                <Play size={compact ? 16 : 18} weight="fill" />
+              )}
+            </Button>
+
+            <div className="flex-1 space-y-1">
+              <div className="text-xs text-muted-foreground flex items-center justify-between">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+              
+              <canvas
+                ref={canvasRef}
+                width={compact ? 300 : 400}
+                height={compact ? 40 : 60}
+                className="w-full h-10 rounded cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={handleWaveformClick}
+              />
+            </div>
+          </div>
 
         {!compact && (
           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/50">
@@ -273,12 +294,17 @@ export function AudioPlayer({ audio, onRemove, showRemoveButton = false, compact
           </div>
         )}
 
-        {audio.durationSeconds && (
-          <div className="text-xs text-muted-foreground">
-            Duration: {formatTime(audio.durationSeconds)}
-          </div>
-        )}
+          {audio.durationSeconds && (
+            <div className="text-xs text-muted-foreground">
+              Duration: {formatTime(audio.durationSeconds)}
+            </div>
+          )}
+        </div>
       </div>
+      
+      {showSpectrumAnalyzer && showAnalyzer && (
+        <AudioSpectrumAnalyzer audio={audio} />
+      )}
     </div>
   )
 }

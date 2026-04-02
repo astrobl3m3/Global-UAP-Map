@@ -160,6 +160,7 @@ export function ObservationDetail({ observation, open, onOpenChange, onUpdate }:
                             key={audio.id}
                             audio={audio}
                             compact={false}
+                            showSpectrumAnalyzer={true}
                           />
                         ))}
                       </div>
