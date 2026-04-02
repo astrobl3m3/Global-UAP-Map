@@ -28,7 +28,7 @@ export function formatCoordinates(lat: number, lng: number): string {
 }
 
 export function getTopClassification(observation: Observation): Classification | null {
-  if (observation.communityClassifications.length === 0) return null
+  if (!observation.communityClassifications || observation.communityClassifications.length === 0) return null
   
   const counts: Record<Classification, number> = {
     astronomical: 0,
