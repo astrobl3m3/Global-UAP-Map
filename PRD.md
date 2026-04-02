@@ -20,11 +20,11 @@ This is a sophisticated platform combining real-time sensor data collection, geo
 - **Success criteria**: Location accuracy within 10m for GPS, manual pin placement functional across all zoom levels
 
 ### Multimedia Evidence Capture
-- **Functionality**: Integrated photo, video, and audio recording with device camera/microphone access
-- **Purpose**: Provides visual and auditory evidence to support textual descriptions
+- **Functionality**: Integrated photo, video, and audio recording with device camera/microphone access, including real-time audio spectrum visualization during recording
+- **Purpose**: Provides visual and auditory evidence to support textual descriptions, with live frequency analysis for detecting anomalous audio patterns
 - **Trigger**: User taps media capture buttons within report form
-- **Progression**: Request permission → Open capture interface → Record/capture → Preview → Attach to report → Continue or add more media
-- **Success criteria**: All media types successfully upload, preview correctly, and associate with report metadata
+- **Progression**: Request permission → Open capture interface → Record/capture (with live spectrum for audio) → Preview → Attach to report → Continue or add more media
+- **Success criteria**: All media types successfully upload, preview correctly, and associate with report metadata. Audio recordings display real-time frequency spectrum during capture showing dominant frequencies and peak levels
 
 ### Device Sensor Telemetry Collection
 - **Functionality**: Automatic collection of available device sensors (accelerometer, gyroscope, magnetometer, light, pressure, etc.) during observation
@@ -157,6 +157,7 @@ Animations should feel measured and purposeful, like scientific instruments comi
 - Custom Sensor Visualizer components for real-time data graphs
 - Custom Media Capture interface with device API integration
 - Custom classification voting component with visual aggregation
+- **Custom LiveAudioSpectrum component**: Real-time frequency spectrum analyzer displaying dominant frequencies, peak levels, and waveform visualization during audio recording with FFT-based frequency analysis
 
 **States**:
 - Buttons: Distinct hover with cyan glow, active with scale reduction (0.98), disabled with reduced opacity
@@ -168,6 +169,7 @@ Animations should feel measured and purposeful, like scientific instruments comi
 **Icon Selection**:
 - MapPin, MapTrifold - Location and mapping
 - Camera, VideoCamera, Microphone - Media capture
+- **Waveform, SpeakerHigh** - Real-time audio spectrum analysis and frequency visualization
 - Compass, DeviceMobile, WifiHigh - Sensors
 - ChartBar, TrendUp - Analytics
 - Eye, EyeSlash - Privacy controls

@@ -12,6 +12,7 @@ import { generateId, formatCoordinates } from '@/lib/helpers'
 import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AudioPlayer } from '@/components/AudioPlayer'
+import { LiveAudioSpectrum } from '@/components/LiveAudioSpectrum'
 
 interface ReportDialogProps {
   open: boolean
@@ -594,15 +595,21 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
                   Record Audio
                 </Button>
               ) : (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  className="gap-2 w-full"
-                  onClick={stopAudioRecording}
-                >
-                  <Stop size={18} weight="fill" />
-                  Stop Recording ({formatRecordingTime(audioRecordingTime)})
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className="gap-2 w-full"
+                    onClick={stopAudioRecording}
+                  >
+                    <Stop size={18} weight="fill" />
+                    Stop Recording ({formatRecordingTime(audioRecordingTime)})
+                  </Button>
+                  <LiveAudioSpectrum 
+                    stream={audioStreamRef.current} 
+                    isActive={isRecordingAudio} 
+                  />
+                </>
               )}
 
               {audioFiles.length > 0 && (
