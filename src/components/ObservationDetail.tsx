@@ -123,16 +123,50 @@ export function ObservationDetail({ observation, open, onOpenChange, onUpdate }:
             {allMedia.length > 0 && (
               <div>
                 <h3 className="font-semibold mb-2">Media ({allMedia.length})</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {allMedia.map((item) => (
-                    <div key={item.id} className="aspect-video rounded-lg overflow-hidden bg-secondary">
-                      {item.type === 'video' ? (
-                        <video src={item.url} controls className="w-full h-full object-cover" />
-                      ) : (
-                        <img src={item.url} alt="Observation media" className="w-full h-full object-cover" />
-                      )}
+                <div className="space-y-2">
+                  {observation.photos && observation.photos.length > 0 && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Photos</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {observation.photos.map((photo) => (
+                          <div key={photo.id} className="aspect-video rounded-lg overflow-hidden bg-secondary">
+                            <img src={photo.url} alt="Observation photo" className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
+                  )}
+                  
+                  {observation.videos && observation.videos.length > 0 && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Videos</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {observation.videos.map((video) => (
+                          <div key={video.id} className="aspect-video rounded-lg overflow-hidden bg-secondary">
+                            <video src={video.url} controls className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {observation.audio && observation.audio.length > 0 && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Audio Recordings</p>
+                      <div className="space-y-2">
+                        {observation.audio.map((audio) => (
+                          <div key={audio.id} className="p-3 bg-secondary rounded-lg border border-border">
+                            <audio src={audio.url} controls className="w-full" />
+                            {audio.durationSeconds && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Duration: {Math.floor(audio.durationSeconds / 60)}:{(audio.durationSeconds % 60).toString().padStart(2, '0')}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
