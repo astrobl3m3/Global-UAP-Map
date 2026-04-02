@@ -7,6 +7,7 @@ import { MapView } from '@/components/MapView'
 import { ObservationCard } from '@/components/ObservationCard'
 import { ReportDialog } from '@/components/ReportDialog'
 import { ObservationDetail } from '@/components/ObservationDetail'
+import { LiveIRUVMonitor } from '@/components/LiveIRUVMonitor'
 import { MapTrifold, Stack, TestTube, Handshake, Gear, Plus } from '@phosphor-icons/react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -119,13 +120,16 @@ function App() {
 
             <TabsContent value="sensors" className="absolute inset-0 mt-0 data-[state=active]:block data-[state=inactive]:hidden overflow-auto">
               <div className="p-4">
-                <div className="max-w-4xl mx-auto space-y-6">
+                <div className="max-w-6xl mx-auto space-y-6">
                   <div>
                     <h2 className="text-2xl font-semibold mb-2">Device Sensor Tester</h2>
                     <p className="text-muted-foreground">
                       Test and visualize available device sensors without creating a report.
                     </p>
                   </div>
+                  
+                  <LiveIRUVMonitor />
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-6 border border-border rounded-lg bg-card">
                       <h3 className="font-semibold mb-2">Motion Sensors</h3>

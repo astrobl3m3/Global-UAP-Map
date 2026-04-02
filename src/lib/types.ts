@@ -35,6 +35,8 @@ export interface SensorPermissions {
   bluetooth: boolean
   wifi: boolean
   nfc: boolean
+  irSensor: boolean
+  uvSensor: boolean
   lastUpdated: number
 }
 
@@ -127,6 +129,8 @@ export interface SensorDataSnapshot {
   bluetoothScan?: BluetoothScanResult[]
   nfcDetections?: NFCReading[]
   audioSpectrum?: AudioSpectrumReading[]
+  irSpectrum?: IRSpectrumReading[]
+  uvSpectrum?: UVSpectrumReading[]
   summary: SensorSummary
 }
 
@@ -236,6 +240,28 @@ export interface AudioSpectrumReading {
   magnitudes: number[]
   fundamentalFrequency?: number
   dominantFrequencies: number[]
+}
+
+export interface IRSpectrumReading {
+  t: number
+  wavelengths: number[]
+  intensities: number[]
+  temperature?: number
+  peakWavelength?: number
+  totalIrradiance: number
+  anomalyDetected?: boolean
+}
+
+export interface UVSpectrumReading {
+  t: number
+  wavelengths: number[]
+  intensities: number[]
+  uvIndex?: number
+  uvaIntensity: number
+  uvbIntensity: number
+  uvcIntensity: number
+  peakWavelength?: number
+  anomalyDetected?: boolean
 }
 
 export interface SensorSummary {
