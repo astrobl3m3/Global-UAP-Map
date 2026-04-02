@@ -54,7 +54,7 @@ function App() {
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col h-full">
           {!isMobile && (
             <TabsList className="mx-4 mt-4 w-fit">
               <TabsTrigger value="map" className="gap-2">
@@ -80,9 +80,9 @@ function App() {
             </TabsList>
           )}
 
-          <div className="flex-1 overflow-hidden">
-            <TabsContent value="map" className="h-full mt-0 p-4">
-              <div className="h-full rounded-lg overflow-hidden border border-border shadow-lg">
+          <div className="flex-1 overflow-hidden relative">
+            <TabsContent value="map" className="absolute inset-0 mt-0 p-4 data-[state=active]:flex data-[state=inactive]:hidden">
+              <div className="w-full h-full rounded-lg overflow-hidden border border-border shadow-lg">
                 <MapView
                   observations={safeObservations}
                   center={mapCenter}
@@ -93,7 +93,7 @@ function App() {
               </div>
             </TabsContent>
 
-            <TabsContent value="gallery" className="h-full mt-0">
+            <TabsContent value="gallery" className="absolute inset-0 mt-0 data-[state=active]:block data-[state=inactive]:hidden">
               <ScrollArea className="h-full">
                 <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {safeObservations.length === 0 ? (
@@ -117,78 +117,84 @@ function App() {
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="sensors" className="h-full mt-0 p-4">
-              <div className="max-w-4xl mx-auto space-y-6">
-                <div>
-                  <h2 className="text-2xl font-semibold mb-2">Device Sensor Tester</h2>
-                  <p className="text-muted-foreground">
-                    Test and visualize available device sensors without creating a report.
+            <TabsContent value="sensors" className="absolute inset-0 mt-0 data-[state=active]:block data-[state=inactive]:hidden overflow-auto">
+              <div className="p-4">
+                <div className="max-w-4xl mx-auto space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-semibold mb-2">Device Sensor Tester</h2>
+                    <p className="text-muted-foreground">
+                      Test and visualize available device sensors without creating a report.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-6 border border-border rounded-lg bg-card">
+                      <h3 className="font-semibold mb-2">Motion Sensors</h3>
+                      <p className="text-sm text-muted-foreground">Accelerometer, Gyroscope, Magnetometer</p>
+                    </div>
+                    <div className="p-6 border border-border rounded-lg bg-card">
+                      <h3 className="font-semibold mb-2">Environmental</h3>
+                      <p className="text-sm text-muted-foreground">GPS, Light, Pressure, Temperature</p>
+                    </div>
+                    <div className="p-6 border border-border rounded-lg bg-card">
+                      <h3 className="font-semibold mb-2">Connectivity</h3>
+                      <p className="text-sm text-muted-foreground">Wi-Fi, Bluetooth, NFC</p>
+                    </div>
+                    <div className="p-6 border border-border rounded-lg bg-card">
+                      <h3 className="font-semibold mb-2">Multimedia</h3>
+                      <p className="text-sm text-muted-foreground">Camera, Microphone, Audio Analysis</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Sensor testing requires browser permissions and device support
                   </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-6 border border-border rounded-lg bg-card">
-                    <h3 className="font-semibold mb-2">Motion Sensors</h3>
-                    <p className="text-sm text-muted-foreground">Accelerometer, Gyroscope, Magnetometer</p>
-                  </div>
-                  <div className="p-6 border border-border rounded-lg bg-card">
-                    <h3 className="font-semibold mb-2">Environmental</h3>
-                    <p className="text-sm text-muted-foreground">GPS, Light, Pressure, Temperature</p>
-                  </div>
-                  <div className="p-6 border border-border rounded-lg bg-card">
-                    <h3 className="font-semibold mb-2">Connectivity</h3>
-                    <p className="text-sm text-muted-foreground">Wi-Fi, Bluetooth, NFC</p>
-                  </div>
-                  <div className="p-6 border border-border rounded-lg bg-card">
-                    <h3 className="font-semibold mb-2">Multimedia</h3>
-                    <p className="text-sm text-muted-foreground">Camera, Microphone, Audio Analysis</p>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Sensor testing requires browser permissions and device support
-                </p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="partners" className="h-full mt-0 p-4">
-              <div className="max-w-4xl mx-auto space-y-6">
-                <div>
-                  <h2 className="text-2xl font-semibold mb-2">Partner Network</h2>
-                  <p className="text-muted-foreground">
-                    Trusted partners in scientific equipment, research, and education.
-                  </p>
-                </div>
-                <div className="text-center py-12 text-muted-foreground">
-                  Partner content coming soon
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="settings" className="h-full mt-0 p-4">
-              <div className="max-w-2xl mx-auto space-y-6">
-                <div>
-                  <h2 className="text-2xl font-semibold mb-2">Settings & Privacy</h2>
-                  <p className="text-muted-foreground">
-                    Manage your data, permissions, and preferences.
-                  </p>
+            <TabsContent value="partners" className="absolute inset-0 mt-0 data-[state=active]:block data-[state=inactive]:hidden overflow-auto">
+              <div className="p-4">
+                <div className="max-w-4xl mx-auto space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-semibold mb-2">Partner Network</h2>
+                    <p className="text-muted-foreground">
+                      Trusted partners in scientific equipment, research, and education.
+                    </p>
+                  </div>
+                  <div className="text-center py-12 text-muted-foreground">
+                    Partner content coming soon
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  <div className="p-6 border border-border rounded-lg bg-card">
-                    <h3 className="font-semibold mb-2">Sensor Permissions</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Control which sensors can be accessed when creating reports
+              </div>
+            </TabsContent>
+
+            <TabsContent value="settings" className="absolute inset-0 mt-0 data-[state=active]:block data-[state=inactive]:hidden overflow-auto">
+              <div className="p-4">
+                <div className="max-w-2xl mx-auto space-y-6">
+                  <div>
+                    <h2 className="text-2xl font-semibold mb-2">Settings & Privacy</h2>
+                    <p className="text-muted-foreground">
+                      Manage your data, permissions, and preferences.
                     </p>
                   </div>
-                  <div className="p-6 border border-border rounded-lg bg-card">
-                    <h3 className="font-semibold mb-2">Privacy Controls</h3>
-                    <p className="text-sm text-muted-foreground">
-                      GDPR-compliant data export and deletion options
-                    </p>
-                  </div>
-                  <div className="p-6 border border-border rounded-lg bg-card">
-                    <h3 className="font-semibold mb-2">Language</h3>
-                    <p className="text-sm text-muted-foreground">
-                      English • Português • Español • Français • Deutsch
-                    </p>
+                  <div className="space-y-4">
+                    <div className="p-6 border border-border rounded-lg bg-card">
+                      <h3 className="font-semibold mb-2">Sensor Permissions</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Control which sensors can be accessed when creating reports
+                      </p>
+                    </div>
+                    <div className="p-6 border border-border rounded-lg bg-card">
+                      <h3 className="font-semibold mb-2">Privacy Controls</h3>
+                      <p className="text-sm text-muted-foreground">
+                        GDPR-compliant data export and deletion options
+                      </p>
+                    </div>
+                    <div className="p-6 border border-border rounded-lg bg-card">
+                      <h3 className="font-semibold mb-2">Language</h3>
+                      <p className="text-sm text-muted-foreground">
+                        English • Português • Español • Français • Deutsch
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -196,7 +202,7 @@ function App() {
           </div>
 
           {isMobile && (
-            <div className="border-t border-border bg-card">
+            <div className="border-t border-border bg-card flex-shrink-0">
               <TabsList className="w-full grid grid-cols-5 rounded-none h-auto">
                 <TabsTrigger value="map" className="flex-col gap-1 py-2">
                   <MapTrifold size={20} weight="fill" />
