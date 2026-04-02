@@ -61,6 +61,8 @@ export function MapView({
     markersRef.current.forEach((marker) => marker.remove())
     markersRef.current.clear()
 
+    if (!observations || observations.length === 0) return
+
     const customIcon = L.divIcon({
       className: 'custom-marker',
       html: `
