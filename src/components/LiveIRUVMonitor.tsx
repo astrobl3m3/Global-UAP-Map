@@ -5,8 +5,18 @@ import { useIRUVSensors } from '@/hooks/use-ir-uv-sensors'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Play, Pause, Trash, Info } from '@phosphor-icons/react'
+import { Play, Pause, Trash, Info, DownloadSimple } from '@phosphor-icons/react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { exportIRReadings, exportUVReadings } from '@/lib/export'
+import { toast } from 'sonner'
 
 export function LiveIRUVMonitor() {
   const [isRecording, setIsRecording] = useState(false)
@@ -21,6 +31,46 @@ export function LiveIRUVMonitor() {
 
   const handleClear = () => {
     clearReadings()
+  }
+
+  const handleExportIR = (format: 'csv' | 'json') => {
+    if (irReadings.length === 0) {
+      toast.error('No IR data to export')
+      return
+    }
+    exportIRReadings(irReadings, { format, includeMetadata: true })
+    toast.success(`IR spectrum exported as ${format.toUpperCase()}`)
+  }
+
+  const handleExportUV = (format: 'csv' | 'json') => {
+    if (uvReadings.length === 0) {
+      toast.error('No UV data to export')
+      return
+    }
+    exportUVReadings(uvReadings, { format, includeMetadata: true })
+    toast.success(`UV spectrum exported as ${format.toUpperCase()}`)
+  }
+
+  const handleExportAll = (format: 'csv' | 'json') => {
+    if (irReadings.length === 0 && uvReadings.length === 0) {
+      toast.error('No data to export')
+      return
+    }
+    if (irReadings.length > 0) {
+      exportIRReadings(irReadings, { 
+        format, 
+        filename: `ir-spectrum-${Date.now()}.${format}`,
+        includeMetadata: true 
+      })
+    }
+    if (uvReadings.length > 0) {
+      exportUVReadings(uvReadings, { 
+        format, 
+        filename: `uv-spectrum-${Date.now()}.${format}`,
+        includeMetadata: true 
+      })
+    }
+    toast.success(`All sensor data exported as ${format.toUpperCase()}`)
   }
 
   return (
@@ -54,6 +104,42 @@ export function LiveIRUVMonitor() {
                 </>
               )}
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  disabled={irReadings.length === 0 && uvReadings.length === 0}
+                >
+                  <DownloadSimple size={18} weight="fill" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Export Format</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleExportAll('json')}>
+                  All Data (JSON)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportAll('csv')}>
+                  All Data (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleExportIR('json')} disabled={irReadings.length === 0}>
+                  IR Only (JSON)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportIR('csv')} disabled={irReadings.length === 0}>
+                  IR Only (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleExportUV('json')} disabled={uvReadings.length === 0}>
+                  UV Only (JSON)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportUV('csv')} disabled={uvReadings.length === 0}>
+                  UV Only (CSV)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               onClick={handleClear}
               variant="outline"
