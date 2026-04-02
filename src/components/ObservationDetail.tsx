@@ -65,7 +65,7 @@ export function ObservationDetail({ observation, open, onOpenChange, onUpdate }:
     toast.success('Classification added')
   }
 
-  const allMedia: MediaFile[] = [...observation.photos, ...observation.videos, ...observation.audio]
+  const allMedia: MediaFile[] = [...(observation.photos || []), ...(observation.videos || []), ...(observation.audio || [])]
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

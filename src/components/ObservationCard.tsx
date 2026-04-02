@@ -21,7 +21,7 @@ export function ObservationCard({ observation, onClick }: ObservationCardProps) 
     unknown: 'bg-gray-500/20 text-gray-300 border-gray-500/50',
   }
 
-  const allMedia = [...observation.photos, ...observation.videos]
+  const allMedia = [...(observation.photos || []), ...(observation.videos || [])]
   const mediaCount = allMedia.length
 
   return (
