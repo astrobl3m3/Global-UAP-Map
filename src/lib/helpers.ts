@@ -1,4 +1,4 @@
-import type { Observation, ClassificationCategory } from './types'
+import type { Observation, Classification } from './types'
 
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
@@ -27,10 +27,10 @@ export function formatCoordinates(lat: number, lng: number): string {
   return `${Math.abs(lat).toFixed(6)}°${latDir}, ${Math.abs(lng).toFixed(6)}°${lngDir}`
 }
 
-export function getTopClassification(observations: Observation): ClassificationCategory | null {
-  if (observations.classifications.length === 0) return null
+export function getTopClassification(observation: Observation): Classification | null {
+  if (observation.communityClassifications.length === 0) return null
   
-  const counts: Record<ClassificationCategory, number> = {
+  const counts: Record<Classification, number> = {
     astronomical: 0,
     atmospheric: 0,
     weather: 0,
@@ -39,25 +39,25 @@ export function getTopClassification(observations: Observation): ClassificationC
     unknown: 0,
   }
   
-  observations.classifications.forEach(c => {
-    counts[c.category]++
+  observation.communityClassifications.forEach(c => {
+    counts[c.classification]++
   })
   
   let maxCount = 0
-  let topCategory: ClassificationCategory | null = null
+  let topCategory: Classification | null = null
   
   Object.entries(counts).forEach(([category, count]) => {
     if (count > maxCount) {
       maxCount = count
-      topCategory = category as ClassificationCategory
+      topCategory = category as Classification
     }
   })
   
   return topCategory
 }
 
-export function getClassificationLabel(category: ClassificationCategory): string {
-  const labels: Record<ClassificationCategory, string> = {
+export function getClassificationLabel(category: Classification): string {
+  const labels: Record<Classification, string> = {
     astronomical: 'Astronomical',
     atmospheric: 'Atmospheric',
     weather: 'Weather',
@@ -68,8 +68,8 @@ export function getClassificationLabel(category: ClassificationCategory): string
   return labels[category]
 }
 
-export function getClassificationColor(category: ClassificationCategory): string {
-  const colors: Record<ClassificationCategory, string> = {
+export function getClassificationColor(category: Classification): string {
+  const colors: Record<Classification, string> = {
     astronomical: 'bg-blue-500',
     atmospheric: 'bg-cyan-500',
     weather: 'bg-sky-500',
