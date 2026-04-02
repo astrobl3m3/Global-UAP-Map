@@ -54,10 +54,10 @@ export function ObservationDetail({ observation, open, onOpenChange, onUpdate }:
     const updated = {
       ...observation,
       communityClassifications: [
-        ...observation.communityClassifications,
+        ...(observation.communityClassifications || []),
         newVote,
       ],
-      classificationCount: observation.classificationCount + 1,
+      classificationCount: (observation.classificationCount || 0) + 1,
       updatedAt: Date.now(),
     }
 
@@ -177,7 +177,7 @@ export function ObservationDetail({ observation, open, onOpenChange, onUpdate }:
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2">
                   {classificationOptions.map((category) => {
-                    const count = observation.communityClassifications.filter((c) => c.classification === category).length
+                    const count = (observation.communityClassifications || []).filter((c) => c.classification === category).length
                     return (
                       <Button
                         key={category}
