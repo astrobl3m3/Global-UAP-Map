@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import type { Observation, Location, MediaFile } from '@/lib/types'
+import type { Observation, Location, MediaFile, SensorDataSnapshot } from '@/lib/types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AudioPlayer } from '@/components/AudioPlayer'
 import { LiveAudioSpectrum } from '@/components/LiveAudioSpectrum'
+import { SensorDataSelector } from '@/components/SensorDataSelector'
 
 interface ReportDialogProps {
   open: boolean
@@ -35,6 +36,8 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
   const [recordingTime, setRecordingTime] = useState(0)
   const [audioRecordingTime, setAudioRecordingTime] = useState(0)
   const [audioQuality, setAudioQuality] = useState<'low' | 'medium' | 'high'>('medium')
+  const [sensorData, setSensorData] = useState<SensorDataSnapshot | undefined>(undefined)
+  const [isSensorCapturing, setIsSensorCapturing] = useState(false)
   
   const photoInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -315,8 +318,8 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
       return
     }
 
-    if (isRecording || isRecordingAudio) {
-      toast.error('Please stop all recordings before submitting')
+    if (isRecording || isRecordingAudio || isSensorCapturing) {
+      toast.error('Please stop all recordings and sensor captures before submitting')
       return
     }
 
@@ -336,6 +339,7 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
       photos,
       videos,
       audio: audioFiles,
+      sensorData,
       communityClassifications: [],
       moderationStatus: 'approved',
       viewCount: 0,
@@ -357,6 +361,7 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
     setPhotos([])
     setVideos([])
     setAudioFiles([])
+    setSensorData(undefined)
   }
 
   useEffect(() => {
@@ -377,6 +382,8 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
       setAudioFiles([])
       setRecordingTime(0)
       setAudioRecordingTime(0)
+      setSensorData(undefined)
+      setIsSensorCapturing(false)
     }
   }, [open])
 
@@ -630,6 +637,13 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
               )}
             </div>
 
+            <SensorDataSelector
+              onDataCaptured={setSensorData}
+              onDataCleared={() => setSensorData(undefined)}
+              isCapturing={isSensorCapturing}
+              onCapturingChange={setIsSensorCapturing}
+            />
+
             <div className="space-y-3">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -673,7 +687,7 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
             type="button"
             onClick={handleSubmit}
             className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
-            disabled={isRecording || isRecordingAudio}
+            disabled={isRecording || isRecordingAudio || isSensorCapturing}
           >
             Submit Report
           </Button>
