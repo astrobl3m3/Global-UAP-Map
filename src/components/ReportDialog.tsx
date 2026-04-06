@@ -5,15 +5,18 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { MapPin, Crosshair, Camera, VideoCamera, X, Play, Pause, Stop, Image as ImageIcon, Microphone, Gear } from '@phosphor-icons/react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { MapPin, Crosshair, Camera, VideoCamera, X, Play, Pause, Stop, Image as ImageIcon, Microphone, Gear, MapTrifold, TextColumns } from '@phosphor-icons/react'
 import { generateId, formatCoordinates } from '@/lib/helpers'
 import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AudioPlayer } from '@/components/AudioPlayer'
 import { LiveAudioSpectrum } from '@/components/LiveAudioSpectrum'
 import { SensorDataSelector } from '@/components/SensorDataSelector'
+import { MapView } from '@/components/MapView'
 
 interface ReportDialogProps {
   open: boolean
@@ -38,6 +41,10 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
   const [audioQuality, setAudioQuality] = useState<'low' | 'medium' | 'high'>('medium')
   const [sensorData, setSensorData] = useState<SensorDataSnapshot | undefined>(undefined)
   const [isSensorCapturing, setIsSensorCapturing] = useState(false)
+  const [locationMode, setLocationMode] = useState<'gps' | 'map' | 'manual'>('gps')
+  const [manualLat, setManualLat] = useState('')
+  const [manualLng, setManualLng] = useState('')
+  const [mapCenter, setMapCenter] = useState<Location>({ lat: 20, lng: 0 })
   
   const photoInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -57,13 +64,16 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
     setIsGettingLocation(true)
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLocation({
+        const newLocation = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-        })
+        }
+        setLocation(newLocation)
+        setMapCenter(newLocation)
         setLocationAccuracy(position.coords.accuracy)
         setAltitude(position.coords.altitude || undefined)
         setIsGettingLocation(false)
+        setLocationMode('gps')
         toast.success('Location acquired')
       },
       (error) => {
@@ -71,6 +81,42 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
         toast.error(`Location error: ${error.message}`)
       }
     )
+  }
+
+  const handleMapClick = (clickedLocation: Location) => {
+    setLocation(clickedLocation)
+    setLocationAccuracy(0)
+    setAltitude(undefined)
+    setLocationMode('map')
+    toast.success('Location selected on map')
+  }
+
+  const handleManualLocationSubmit = () => {
+    const lat = parseFloat(manualLat)
+    const lng = parseFloat(manualLng)
+
+    if (isNaN(lat) || isNaN(lng)) {
+      toast.error('Invalid coordinates')
+      return
+    }
+
+    if (lat < -90 || lat > 90) {
+      toast.error('Latitude must be between -90 and 90')
+      return
+    }
+
+    if (lng < -180 || lng > 180) {
+      toast.error('Longitude must be between -180 and 180')
+      return
+    }
+
+    const newLocation = { lat, lng }
+    setLocation(newLocation)
+    setMapCenter(newLocation)
+    setLocationAccuracy(0)
+    setAltitude(undefined)
+    setLocationMode('manual')
+    toast.success('Manual location set')
   }
 
   const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -362,6 +408,9 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
     setVideos([])
     setAudioFiles([])
     setSensorData(undefined)
+    setLocationMode('gps')
+    setManualLat('')
+    setManualLng('')
   }
 
   useEffect(() => {
@@ -384,6 +433,10 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
       setAudioRecordingTime(0)
       setSensorData(undefined)
       setIsSensorCapturing(false)
+      setLocationMode('gps')
+      setManualLat('')
+      setManualLng('')
+      setMapCenter({ lat: 20, lng: 0 })
     }
   }, [open])
 
@@ -418,23 +471,98 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
           <div className="space-y-6 py-4 pr-4">
             <div className="space-y-3">
               <Label>Location</Label>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  onClick={handleGetLocation}
-                  disabled={isGettingLocation}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Crosshair size={18} weight="bold" />
-                  {isGettingLocation ? 'Getting location...' : 'Use My Location'}
-                </Button>
-              </div>
+              <Tabs value={locationMode} onValueChange={(v) => setLocationMode(v as 'gps' | 'map' | 'manual')} className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="gps" className="gap-1.5">
+                    <Crosshair size={16} weight="bold" />
+                    GPS
+                  </TabsTrigger>
+                  <TabsTrigger value="map" className="gap-1.5">
+                    <MapTrifold size={16} weight="bold" />
+                    Map
+                  </TabsTrigger>
+                  <TabsTrigger value="manual" className="gap-1.5">
+                    <TextColumns size={16} weight="bold" />
+                    Manual
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="gps" className="space-y-3 mt-3">
+                  <Button
+                    type="button"
+                    onClick={handleGetLocation}
+                    disabled={isGettingLocation}
+                    variant="outline"
+                    className="gap-2 w-full"
+                  >
+                    <Crosshair size={18} weight="bold" />
+                    {isGettingLocation ? 'Getting location...' : 'Use My Location'}
+                  </Button>
+                </TabsContent>
+
+                <TabsContent value="map" className="space-y-3 mt-3">
+                  <div className="border border-border rounded-lg overflow-hidden h-[300px]">
+                    <MapView
+                      observations={[]}
+                      center={mapCenter}
+                      zoom={location ? 13 : 3}
+                      onMapClick={handleMapClick}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Click anywhere on the map to set location
+                  </p>
+                </TabsContent>
+
+                <TabsContent value="manual" className="space-y-3 mt-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="manual-lat" className="text-xs">Latitude</Label>
+                      <Input
+                        id="manual-lat"
+                        type="number"
+                        step="any"
+                        placeholder="e.g. 40.712776"
+                        value={manualLat}
+                        onChange={(e) => setManualLat(e.target.value)}
+                        className="font-mono"
+                      />
+                      <p className="text-xs text-muted-foreground">-90 to 90</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="manual-lng" className="text-xs">Longitude</Label>
+                      <Input
+                        id="manual-lng"
+                        type="number"
+                        step="any"
+                        placeholder="e.g. -74.005974"
+                        value={manualLng}
+                        onChange={(e) => setManualLng(e.target.value)}
+                        className="font-mono"
+                      />
+                      <p className="text-xs text-muted-foreground">-180 to 180</p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleManualLocationSubmit}
+                    variant="outline"
+                    className="w-full gap-2"
+                  >
+                    <MapPin size={18} weight="bold" />
+                    Set Location
+                  </Button>
+                </TabsContent>
+              </Tabs>
+
               {location && (
                 <div className="p-3 bg-secondary rounded-lg flex items-start gap-2">
                   <MapPin size={18} weight="fill" className="mt-0.5 text-accent" />
                   <div className="flex-1">
                     <p className="font-mono text-sm">{formatCoordinates(location.lat, location.lng)}</p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      Set via: {locationMode}
+                    </p>
                     {altitude && (
                       <p className="text-xs text-muted-foreground">
                         Altitude: {altitude.toFixed(0)}m
