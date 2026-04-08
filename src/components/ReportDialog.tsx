@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MapPin, Crosshair, Camera, VideoCamera, X, Play, Pause, Stop, Image as ImageIcon, Microphone, Gear, MapTrifold, TextColumns } from '@phosphor-icons/react'
+import { MapPin, Crosshair, Camera, VideoCamera, X, Play, Pause, Stop, Image as ImageIcon, Microphone, Gear, MapTrifold, TextColumns, MagnifyingGlass } from '@phosphor-icons/react'
 import { generateId, formatCoordinates } from '@/lib/helpers'
 import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -17,6 +17,7 @@ import { AudioPlayer } from '@/components/AudioPlayer'
 import { LiveAudioSpectrum } from '@/components/LiveAudioSpectrum'
 import { SensorDataSelector } from '@/components/SensorDataSelector'
 import { MapView } from '@/components/MapView'
+import { LocationSearch } from '@/components/LocationSearch'
 
 interface ReportDialogProps {
   open: boolean
@@ -41,7 +42,7 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
   const [audioQuality, setAudioQuality] = useState<'low' | 'medium' | 'high'>('medium')
   const [sensorData, setSensorData] = useState<SensorDataSnapshot | undefined>(undefined)
   const [isSensorCapturing, setIsSensorCapturing] = useState(false)
-  const [locationMode, setLocationMode] = useState<'gps' | 'map' | 'manual'>('gps')
+  const [locationMode, setLocationMode] = useState<'gps' | 'map' | 'manual' | 'search'>('gps')
   const [manualLat, setManualLat] = useState('')
   const [manualLng, setManualLng] = useState('')
   const [mapCenter, setMapCenter] = useState<Location>({ lat: 20, lng: 0 })
@@ -378,7 +379,7 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
       reportedAt: now,
       location,
       locationAccuracy,
-      locationMethod: 'gps',
+      locationMethod: locationMode === 'gps' ? 'gps' : 'manual',
       altitude,
       title: description.trim().slice(0, 100),
       description: description.trim(),
@@ -471,8 +472,8 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
           <div className="space-y-6 py-4 pr-4">
             <div className="space-y-3">
               <Label>Location</Label>
-              <Tabs value={locationMode} onValueChange={(v) => setLocationMode(v as 'gps' | 'map' | 'manual')} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+              <Tabs value={locationMode} onValueChange={(v) => setLocationMode(v as 'gps' | 'map' | 'manual' | 'search')} className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="gps" className="gap-1.5">
                     <Crosshair size={16} weight="bold" />
                     GPS
@@ -480,6 +481,10 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
                   <TabsTrigger value="map" className="gap-1.5">
                     <MapTrifold size={16} weight="bold" />
                     Map
+                  </TabsTrigger>
+                  <TabsTrigger value="search" className="gap-1.5">
+                    <MagnifyingGlass size={16} weight="bold" />
+                    Search
                   </TabsTrigger>
                   <TabsTrigger value="manual" className="gap-1.5">
                     <TextColumns size={16} weight="bold" />
@@ -498,6 +503,18 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
                     <Crosshair size={18} weight="bold" />
                     {isGettingLocation ? 'Getting location...' : 'Use My Location'}
                   </Button>
+                </TabsContent>
+
+                <TabsContent value="search" className="space-y-3 mt-3">
+                  <LocationSearch
+                    onSelectLocation={(loc, elev, name) => {
+                      setLocation(loc)
+                      setMapCenter(loc)
+                      setAltitude(elev)
+                      setLocationAccuracy(0)
+                      setLocationMode('search')
+                    }}
+                  />
                 </TabsContent>
 
                 <TabsContent value="map" className="space-y-3 mt-3">

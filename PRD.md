@@ -13,11 +13,11 @@ This is a sophisticated platform combining real-time sensor data collection, geo
 ## Essential Features
 
 ### Map-Based Observation Recording
-- **Functionality**: Interactive global map allowing users to pinpoint sighting locations via manual placement, browser geolocation, or GPS coordinates
-- **Purpose**: Establishes precise geographic context for all observations and enables spatial pattern analysis
+- **Functionality**: Interactive global map allowing users to pinpoint sighting locations via manual placement, browser geolocation, GPS coordinates, or location search by address/place name with favorite locations support
+- **Purpose**: Establishes precise geographic context for all observations and enables spatial pattern analysis with location discovery via search
 - **Trigger**: User clicks "Report Sighting" button from main map view
-- **Progression**: View map → Select location (pin/GPS/auto) → Confirm coordinates → Proceed to details form
-- **Success criteria**: Location accuracy within 10m for GPS, manual pin placement functional across all zoom levels
+- **Progression**: View map → Select location (pin/GPS/search/manual) → Confirm coordinates and elevation → Proceed to details form
+- **Success criteria**: Location accuracy within 10m for GPS, manual pin placement functional across all zoom levels, search returns relevant results within 1 second, favorites persist across sessions, elevation data displays when available
 
 ### Multimedia Evidence Capture
 - **Functionality**: Integrated photo, video, and audio recording with device camera/microphone access, including real-time audio spectrum visualization during recording
