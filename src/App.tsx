@@ -1,14 +1,19 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
 import type { Observation, Location } from '@/lib/types'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import { MapView } from '@/components/MapView'
 import { ObservationCard } from '@/components/ObservationCard'
 import { ReportDialog } from '@/components/ReportDialog'
 import { ObservationDetail } from '@/components/ObservationDetail'
 import { LiveIRUVMonitor } from '@/components/LiveIRUVMonitor'
-import { MapTrifold, Stack, TestTube, Handshake, Gear, Plus } from '@phosphor-icons/react'
+import { ObservationFilters, type ObservationFilterOptions } from '@/components/ObservationFilters'
+import { ExportObservationsDialog } from '@/components/ExportObservationsDialog'
+import { filterObservations } from '@/lib/observation-filters'
+import { MapTrifold, Stack, TestTube, Handshake, Gear, Plus, Download, Fire } from '@phosphor-icons/react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useIsMobile } from '@/hooks/use-mobile'
 
@@ -16,11 +21,21 @@ function App() {
   const [observations, setObservations] = useKV<Observation[]>('observations', [])
   const [activeTab, setActiveTab] = useState('map')
   const [isReportOpen, setIsReportOpen] = useState(false)
+  const [isExportOpen, setIsExportOpen] = useState(false)
   const [selectedObservation, setSelectedObservation] = useState<Observation | null>(null)
   const [mapCenter, setMapCenter] = useState<Location>({ lat: 20, lng: 0 })
+  const [showHeatmap, setShowHeatmap] = useState(false)
+  const [filters, setFilters] = useState<ObservationFilterOptions>({
+    dateRange: 'all',
+    sortBy: 'newest',
+  })
   const isMobile = useIsMobile()
 
   const safeObservations = observations || []
+  
+  const filteredObservations = useMemo(() => {
+    return filterObservations(safeObservations, filters)
+  }, [safeObservations, filters])
 
   const handleNewReport = (report: Observation) => {
     setObservations((current) => [report, ...(current || [])])
@@ -40,24 +55,37 @@ function App() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground overflow-hidden">
-      <header className="border-b border-border bg-card px-4 py-3 flex items-center justify-between">
+      <header className="border-b border-border bg-card px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Global UAP MAP</h1>
           <p className="text-xs text-muted-foreground">Scientific Observation Platform</p>
         </div>
-        <Button 
-          onClick={() => setIsReportOpen(true)}
-          className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
-        >
-          <Plus size={18} weight="bold" />
-          <span className="hidden sm:inline">Report Sighting</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          {safeObservations.length > 0 && (
+            <Button 
+              onClick={() => setIsExportOpen(true)}
+              variant="outline"
+              size="sm"
+              className="gap-2 hidden sm:flex"
+            >
+              <Download size={18} weight="bold" />
+              Export
+            </Button>
+          )}
+          <Button 
+            onClick={() => setIsReportOpen(true)}
+            className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+          >
+            <Plus size={18} weight="bold" />
+            <span className="hidden sm:inline">Report Sighting</span>
+          </Button>
+        </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col h-full">
           {!isMobile && (
-            <TabsList className="mx-4 mt-4 w-fit">
+            <TabsList className="mx-4 mt-4 w-fit flex-shrink-0">
               <TabsTrigger value="map" className="gap-2">
                 <MapTrifold size={18} weight="fill" />
                 Map
@@ -82,37 +110,81 @@ function App() {
           )}
 
           <div className="flex-1 overflow-hidden relative">
-            <TabsContent value="map" className="absolute inset-0 mt-0 p-4 data-[state=active]:flex data-[state=inactive]:hidden">
-              <div className="w-full h-full rounded-lg overflow-hidden border border-border shadow-lg">
+            <TabsContent value="map" className="absolute inset-0 mt-0 p-4 data-[state=active]:flex data-[state=inactive]:hidden flex-col gap-4">
+              <div className="flex items-center justify-between gap-4 bg-card border border-border rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <Fire size={20} weight="fill" className="text-accent" />
+                  <Label htmlFor="heatmap-toggle" className="text-sm font-medium cursor-pointer">
+                    Show Heatmap
+                  </Label>
+                </div>
+                <Switch
+                  id="heatmap-toggle"
+                  checked={showHeatmap}
+                  onCheckedChange={setShowHeatmap}
+                />
+              </div>
+              <div className="flex-1 rounded-lg overflow-hidden border border-border shadow-lg">
                 <MapView
-                  observations={safeObservations}
+                  observations={filteredObservations}
                   center={mapCenter}
                   zoom={3}
                   onMarkerClick={handleMarkerClick}
                   selectedObservation={selectedObservation?.id}
+                  showHeatmap={showHeatmap}
                 />
               </div>
             </TabsContent>
 
             <TabsContent value="gallery" className="absolute inset-0 mt-0 data-[state=active]:block data-[state=inactive]:hidden">
               <ScrollArea className="h-full">
-                <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">Observation Gallery</h2>
+                    {safeObservations.length > 0 && (
+                      <Button 
+                        onClick={() => setIsExportOpen(true)}
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                      >
+                        <Download size={16} weight="bold" />
+                        Export
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <ObservationFilters
+                    filters={filters}
+                    onChange={setFilters}
+                    resultCount={filteredObservations.length}
+                  />
+
                   {safeObservations.length === 0 ? (
-                    <div className="col-span-full text-center py-12">
+                    <div className="text-center py-12">
                       <p className="text-muted-foreground mb-4">No observations yet</p>
                       <Button onClick={() => setIsReportOpen(true)} variant="outline">
                         <Plus size={18} weight="bold" className="mr-2" />
                         Report First Sighting
                       </Button>
                     </div>
+                  ) : filteredObservations.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground mb-4">No observations match your filters</p>
+                      <Button onClick={() => setFilters({ dateRange: 'all', sortBy: 'newest' })} variant="outline">
+                        Clear Filters
+                      </Button>
+                    </div>
                   ) : (
-                    safeObservations.map((obs) => (
-                      <ObservationCard
-                        key={obs.id}
-                        observation={obs}
-                        onClick={() => handleCardClick(obs)}
-                      />
-                    ))
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {filteredObservations.map((obs) => (
+                        <ObservationCard
+                          key={obs.id}
+                          observation={obs}
+                          onClick={() => handleCardClick(obs)}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               </ScrollArea>
@@ -238,6 +310,13 @@ function App() {
         open={isReportOpen}
         onOpenChange={setIsReportOpen}
         onSubmit={handleNewReport}
+      />
+
+      <ExportObservationsDialog
+        open={isExportOpen}
+        onOpenChange={setIsExportOpen}
+        observations={filteredObservations}
+        filteredCount={safeObservations.length}
       />
 
       {selectedObservation && (
