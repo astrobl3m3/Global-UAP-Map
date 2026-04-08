@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { MapView } from '@/components/MapView'
 import { ObservationCard } from '@/components/ObservationCard'
 import { ReportDialog } from '@/components/ReportDialog'
@@ -15,9 +16,11 @@ import { ExportObservationsDialog } from '@/components/ExportObservationsDialog'
 import { ExternalDataManager } from '@/components/ExternalDataManager'
 import { DataSourceTogglePanel } from '@/components/DataSourceTogglePanel'
 import { DataSourceStats } from '@/components/DataSourceStats'
+import { DataRefreshControl } from '@/components/DataRefreshControl'
+import { AdvancedFilterPanel, applyAdvancedFilters, type AdvancedFilterOptions } from '@/components/AdvancedFilterPanel'
 import { filterObservations } from '@/lib/observation-filters'
 import { EXTERNAL_DATA_SOURCES } from '@/lib/external-sources'
-import { MapTrifold, Stack, TestTube, Handshake, Gear, Plus, Download, Fire } from '@phosphor-icons/react'
+import { MapTrifold, Stack, TestTube, Handshake, Gear, Plus, Download, Fire, CaretDown, CaretUp } from '@phosphor-icons/react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useIsMobile } from '@/hooks/use-mobile'
 
@@ -32,6 +35,17 @@ function App() {
   const [mapCenter, setMapCenter] = useState<Location>({ lat: 20, lng: 0 })
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [showExternalData, setShowExternalData] = useState(true)
+  const [heatmapControlsExpanded, setHeatmapControlsExpanded] = useState(false)
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilterOptions>({
+    includeUserReports: true,
+    includeExternalData: true,
+    selectedSources: EXTERNAL_DATA_SOURCES.map(s => s.id),
+    dateRange: 'all',
+    sortBy: 'newest',
+    classifications: [],
+    hasMedia: 'all',
+    hasSensorData: 'all',
+  })
   const [filters, setFilters] = useState<ObservationFilterOptions>({
     dateRange: 'all',
     sortBy: 'newest',
@@ -105,9 +119,14 @@ function App() {
     return safeObservations
   }, [safeObservations, safeExternalObservations, showExternalData, safeActiveSourceIds])
   
+  const userObservationIds = useMemo(() => {
+    return new Set(safeObservations.map(obs => obs.id))
+  }, [safeObservations])
+  
   const filteredObservations = useMemo(() => {
-    return filterObservations(allObservations, filters)
-  }, [allObservations, filters])
+    const advanced = applyAdvancedFilters(allObservations, advancedFilters, userObservationIds)
+    return filterObservations(advanced, filters)
+  }, [allObservations, advancedFilters, filters, userObservationIds])
   
   const handleToggleSource = (sourceId: string, enabled: boolean) => {
     setActiveSourceIds((current) => {
@@ -132,6 +151,10 @@ function App() {
       const filtered = existing.filter((obs) => !obs.id.startsWith(sourceId))
       return [...filtered, ...newObservations]
     })
+  }
+  
+  const handleRefreshComplete = (newObservations: Observation[]) => {
+    setExternalObservations(newObservations)
   }
 
   const handleMarkerClick = (obs: Observation) => {
@@ -202,19 +225,47 @@ function App() {
 
           <div className="flex-1 overflow-hidden relative">
             <TabsContent value="map" className="absolute inset-0 mt-0 p-4 data-[state=active]:flex data-[state=inactive]:hidden flex-col gap-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-card border border-border rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <Fire size={20} weight="fill" className="text-accent" />
-                  <Label htmlFor="heatmap-toggle" className="text-sm font-medium cursor-pointer">
-                    Show Heatmap
-                  </Label>
+              <Collapsible open={heatmapControlsExpanded} onOpenChange={setHeatmapControlsExpanded}>
+                <div className="bg-card border border-border rounded-lg">
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full flex items-center justify-between p-3 hover:bg-muted/50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Fire size={20} weight="fill" className="text-accent" />
+                        <span className="text-sm font-medium">Heatmap Controls</span>
+                      </div>
+                      {heatmapControlsExpanded ? <CaretUp size={16} /> : <CaretDown size={16} />}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-3 pb-3">
+                    <div className="flex items-center justify-between pt-2">
+                      <Label htmlFor="heatmap-toggle" className="text-sm cursor-pointer">
+                        Show Heatmap View
+                      </Label>
+                      <Switch
+                        id="heatmap-toggle"
+                        checked={showHeatmap}
+                        onCheckedChange={setShowHeatmap}
+                      />
+                    </div>
+                  </CollapsibleContent>
                 </div>
-                <Switch
-                  id="heatmap-toggle"
-                  checked={showHeatmap}
-                  onCheckedChange={setShowHeatmap}
-                />
-              </div>
+              </Collapsible>
+              
+              <AdvancedFilterPanel
+                filters={advancedFilters}
+                onChange={setAdvancedFilters}
+                resultCount={filteredObservations.length}
+                totalCount={allObservations.length}
+                dataSources={EXTERNAL_DATA_SOURCES}
+              />
+              
+              <DataRefreshControl
+                activeSourceIds={safeActiveSourceIds}
+                onRefreshComplete={handleRefreshComplete}
+              />
               
               <DataSourceTogglePanel
                 dataSources={EXTERNAL_DATA_SOURCES}
@@ -226,7 +277,8 @@ function App() {
                 observations={allObservations}
                 dataSources={EXTERNAL_DATA_SOURCES}
               />
-              <div className="flex-1 rounded-lg overflow-hidden border border-border shadow-lg">
+              
+              <div className="flex-1 rounded-lg overflow-hidden border border-border shadow-lg min-h-0">
                 <MapView
                   observations={filteredObservations}
                   center={mapCenter}
