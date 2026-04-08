@@ -2,8 +2,9 @@ import type { Observation } from '@/lib/types'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MapPin, Eye, ChatCircle, Camera, Microphone, ArrowUp } from '@phosphor-icons/react'
+import { MapPin, Eye, ChatCircle, Camera, Microphone, ArrowUp, Database } from '@phosphor-icons/react'
 import { formatTimestamp, formatCoordinates, getTopClassification, getClassificationLabel } from '@/lib/helpers'
+import { getSourceById } from '@/lib/external-sources'
 
 interface ObservationCardProps {
   observation: Observation
@@ -20,6 +21,10 @@ export function ObservationCard({ observation, onClick }: ObservationCardProps) 
     'human-made': 'bg-orange-500/20 text-orange-300 border-orange-500/50',
     unknown: 'bg-gray-500/20 text-gray-300 border-gray-500/50',
   }
+
+  const isExternalSource = observation.id.includes('-')
+  const sourceId = isExternalSource ? observation.id.split('-')[0] : null
+  const externalSource = sourceId ? getSourceById(sourceId) : null
 
   const allMedia = [
     ...(Array.isArray(observation.photos) ? observation.photos : []),
@@ -74,7 +79,12 @@ export function ObservationCard({ observation, onClick }: ObservationCardProps) 
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {observation.isAnonymous ? (
+              {externalSource ? (
+                <>
+                  <Database size={12} weight="fill" className="text-accent" />
+                  <span className="text-xs text-accent font-medium">{externalSource.name}</span>
+                </>
+              ) : observation.isAnonymous ? (
                 <span className="text-xs text-muted-foreground">Anonymous</span>
               ) : (
                 <span className="text-xs text-muted-foreground">User</span>

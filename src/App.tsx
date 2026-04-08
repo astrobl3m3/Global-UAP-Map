@@ -12,19 +12,22 @@ import { ObservationDetail } from '@/components/ObservationDetail'
 import { LiveIRUVMonitor } from '@/components/LiveIRUVMonitor'
 import { ObservationFilters, type ObservationFilterOptions } from '@/components/ObservationFilters'
 import { ExportObservationsDialog } from '@/components/ExportObservationsDialog'
+import { ExternalDataManager } from '@/components/ExternalDataManager'
 import { filterObservations } from '@/lib/observation-filters'
-import { MapTrifold, Stack, TestTube, Handshake, Gear, Plus, Download, Fire } from '@phosphor-icons/react'
+import { MapTrifold, Stack, TestTube, Handshake, Gear, Plus, Download, Fire, Database } from '@phosphor-icons/react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useIsMobile } from '@/hooks/use-mobile'
 
 function App() {
   const [observations, setObservations] = useKV<Observation[]>('observations', [])
+  const [externalObservations, setExternalObservations] = useKV<Observation[]>('external-observations', [])
   const [activeTab, setActiveTab] = useState('map')
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [selectedObservation, setSelectedObservation] = useState<Observation | null>(null)
   const [mapCenter, setMapCenter] = useState<Location>({ lat: 20, lng: 0 })
   const [showHeatmap, setShowHeatmap] = useState(false)
+  const [showExternalData, setShowExternalData] = useState(true)
   const [filters, setFilters] = useState<ObservationFilterOptions>({
     dateRange: 'all',
     sortBy: 'newest',
@@ -32,15 +35,31 @@ function App() {
   const isMobile = useIsMobile()
 
   const safeObservations = observations || []
+  const safeExternalObservations = externalObservations || []
+  
+  const allObservations = useMemo(() => {
+    if (showExternalData) {
+      return [...safeObservations, ...safeExternalObservations]
+    }
+    return safeObservations
+  }, [safeObservations, safeExternalObservations, showExternalData])
   
   const filteredObservations = useMemo(() => {
-    return filterObservations(safeObservations, filters)
-  }, [safeObservations, filters])
+    return filterObservations(allObservations, filters)
+  }, [allObservations, filters])
 
   const handleNewReport = (report: Observation) => {
     setObservations((current) => [report, ...(current || [])])
     setIsReportOpen(false)
     setMapCenter({ lat: report.location.lat, lng: report.location.lng })
+  }
+
+  const handleExternalDataLoaded = (newObservations: Observation[], sourceId: string) => {
+    setExternalObservations((current) => {
+      const existing = current || []
+      const filtered = existing.filter((obs) => !obs.id.startsWith(sourceId))
+      return [...filtered, ...newObservations]
+    })
   }
 
   const handleMarkerClick = (obs: Observation) => {
@@ -111,7 +130,7 @@ function App() {
 
           <div className="flex-1 overflow-hidden relative">
             <TabsContent value="map" className="absolute inset-0 mt-0 p-4 data-[state=active]:flex data-[state=inactive]:hidden flex-col gap-4">
-              <div className="flex items-center justify-between gap-4 bg-card border border-border rounded-lg p-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-card border border-border rounded-lg p-3">
                 <div className="flex items-center gap-2">
                   <Fire size={20} weight="fill" className="text-accent" />
                   <Label htmlFor="heatmap-toggle" className="text-sm font-medium cursor-pointer">
@@ -122,6 +141,19 @@ function App() {
                   id="heatmap-toggle"
                   checked={showHeatmap}
                   onCheckedChange={setShowHeatmap}
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-card border border-border rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <Database size={20} weight="fill" className="text-accent" />
+                  <Label htmlFor="external-toggle" className="text-sm font-medium cursor-pointer">
+                    Show External Data Sources
+                  </Label>
+                </div>
+                <Switch
+                  id="external-toggle"
+                  checked={showExternalData}
+                  onCheckedChange={setShowExternalData}
                 />
               </div>
               <div className="flex-1 rounded-lg overflow-hidden border border-border shadow-lg">
@@ -252,6 +284,9 @@ function App() {
                       Manage your data, permissions, and preferences.
                     </p>
                   </div>
+                  
+                  <ExternalDataManager onDataLoaded={handleExternalDataLoaded} />
+                  
                   <div className="space-y-4">
                     <div className="p-6 border border-border rounded-lg bg-card">
                       <h3 className="font-semibold mb-2">Sensor Permissions</h3>
