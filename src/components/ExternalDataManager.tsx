@@ -81,7 +81,7 @@ export function ExternalDataManager({ onDataLoaded }: ExternalDataManagerProps) 
     const sources = enabledSources || []
     sources.forEach((sourceId) => {
       const source = getSourceById(sourceId)
-      if (source && source.endpoint && !lastFetch[sourceId]) {
+      if (source && source.endpoint && source.type === 'live_api' && !lastFetch[sourceId]) {
         fetchSourceData(sourceId)
       }
     })

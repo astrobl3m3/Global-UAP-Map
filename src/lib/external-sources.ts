@@ -32,7 +32,7 @@ export const EXTERNAL_DATA_SOURCES: ExternalDataSource[] = [
   {
     id: 'ufostalker',
     name: 'UFOstalker.com',
-    type: 'real_time_feed',
+    type: 'live_api',
     description: 'Real-time UFO sightings from around the world with live updates',
     endpoint: 'https://www.ufostalker.com/api/sightings',
     enabled: true,

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
 import type { Observation, Location } from '@/lib/types'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -33,6 +33,45 @@ function App() {
     sortBy: 'newest',
   })
   const isMobile = useIsMobile()
+  
+  useEffect(() => {
+    const loadInitialExternalData = async () => {
+      const { fetchNUFORCData, fetchUFOstalkerData, convertExternalToObservation, getSourceById } = await import('@/lib/external-sources')
+      
+      const existingData = externalObservations || []
+      if (existingData.length > 0) {
+        return
+      }
+      
+      try {
+        const [nuforcData, stalkerData] = await Promise.all([
+          fetchNUFORCData(100),
+          fetchUFOstalkerData(50)
+        ])
+        
+        const nuforcSource = getSourceById('nuforc-api')
+        const stalkerSource = getSourceById('ufostalker')
+        
+        const allExternalObs = []
+        
+        if (nuforcSource && nuforcData.length > 0) {
+          allExternalObs.push(...nuforcData.map(ext => convertExternalToObservation(ext, nuforcSource)))
+        }
+        
+        if (stalkerSource && stalkerData.length > 0) {
+          allExternalObs.push(...stalkerData.map(ext => convertExternalToObservation(ext, stalkerSource)))
+        }
+        
+        if (allExternalObs.length > 0) {
+          setExternalObservations(allExternalObs)
+        }
+      } catch (error) {
+        console.error('Failed to load initial external data:', error)
+      }
+    }
+    
+    loadInitialExternalData()
+  }, [])
 
   const safeObservations = observations || []
   const safeExternalObservations = externalObservations || []
