@@ -1,15 +1,16 @@
 import type { Observation, MediaFile } from '@/lib/types'
+import type { ExternalSourceMetadata } from '@/lib/external-sources'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AudioPlayer } from '@/components/AudioPlayer'
 import { ClassificationVoting } from '@/components/ClassificationVoting'
-import { MapPin, Eye, Calendar } from '@phosphor-icons/react'
+import { MapPin, Eye, Calendar, Link as LinkIcon } from '@phosphor-icons/react'
 import { formatTimestamp, formatCoordinates, getTopClassification, getClassificationLabel } from '@/lib/helpers'
 
 interface ObservationDetailProps {
-  observation: Observation
+  observation: Observation & { externalSource?: ExternalSourceMetadata }
   open: boolean
   onOpenChange: (open: boolean) => void
   onUpdate: (observation: Observation) => void
@@ -61,6 +62,25 @@ export function ObservationDetail({ observation, open, onOpenChange, onUpdate }:
                   <span className="text-sm text-muted-foreground">Anonymous Report</span>
                 ) : (
                   <span className="text-sm text-muted-foreground">User Report</span>
+                )}
+
+                {observation.externalSource && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md border border-border">
+                    <LinkIcon size={16} weight="bold" className="text-accent" />
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold">{observation.externalSource.sourceAttribution}</p>
+                      {observation.externalSource.sourceUrl && (
+                        <a
+                          href={observation.externalSource.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-accent hover:underline"
+                        >
+                          View Original Source
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
 

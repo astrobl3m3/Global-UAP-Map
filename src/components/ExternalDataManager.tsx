@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { 
   EXTERNAL_DATA_SOURCES, 
   fetchNUFORCData, 
+  fetchUFOstalkerData,
   convertExternalToObservation,
   getSourceById,
   type ExternalObservation,
@@ -24,7 +25,7 @@ interface ExternalDataManagerProps {
 }
 
 export function ExternalDataManager({ onDataLoaded }: ExternalDataManagerProps) {
-  const [enabledSources, setEnabledSources] = useKV<string[]>('enabled-external-sources', ['nuforc-api'])
+  const [enabledSources, setEnabledSources] = useKV<string[]>('enabled-external-sources', ['nuforc-api', 'ufostalker'])
   const [loadingState, setLoadingState] = useState<Record<string, boolean>>({})
   const [dataCache, setDataCache] = useState<Record<string, ExternalObservation[]>>({})
   const [lastFetch, setLastFetch] = useState<Record<string, number>>({})
@@ -53,6 +54,8 @@ export function ExternalDataManager({ onDataLoaded }: ExternalDataManagerProps) 
 
       if (sourceId === 'nuforc-api') {
         externalObs = await fetchNUFORCData(200)
+      } else if (sourceId === 'ufostalker') {
+        externalObs = await fetchUFOstalkerData(100)
       }
 
       if (externalObs.length > 0) {

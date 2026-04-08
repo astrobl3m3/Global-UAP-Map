@@ -16,6 +16,14 @@ export function filterObservations(
     })
   }
 
+  if (filters.dataSource && filters.dataSource !== 'all') {
+    if (filters.dataSource === 'user') {
+      filtered = filtered.filter((obs) => !obs.id.includes('-') || obs.userId)
+    } else if (filters.dataSource === 'external') {
+      filtered = filtered.filter((obs) => obs.id.includes('-') && !obs.userId)
+    }
+  }
+
   if (filters.dateRange && filters.dateRange !== 'all') {
     const now = Date.now()
     const ranges: Record<string, number> = {

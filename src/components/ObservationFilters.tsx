@@ -11,6 +11,7 @@ export interface ObservationFilterOptions {
   classification?: Classification
   dateRange?: 'all' | 'today' | 'week' | 'month' | 'year'
   sortBy?: 'newest' | 'oldest' | 'mostViewed' | 'mostClassified'
+  dataSource?: 'all' | 'user' | 'external'
 }
 
 interface ObservationFiltersProps {
@@ -52,16 +53,25 @@ export function ObservationFilters({ filters, onChange, resultCount }: Observati
     })
   }
 
+  const handleDataSourceChange = (value: string) => {
+    onChange({
+      ...filters,
+      dataSource: value as ObservationFilterOptions['dataSource'],
+    })
+  }
+
   const handleClearFilters = () => {
     onChange({
       dateRange: 'all',
       sortBy: 'newest',
+      dataSource: 'all',
     })
   }
 
   const activeFiltersCount = [
     filters.classification,
     filters.dateRange && filters.dateRange !== 'all',
+    filters.dataSource && filters.dataSource !== 'all',
   ].filter(Boolean).length
 
   return (
@@ -102,7 +112,7 @@ export function ObservationFilters({ filters, onChange, resultCount }: Observati
         </div>
       </div>
 
-      <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${isExpanded || 'max-lg:hidden'}`}>
+      <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 ${isExpanded || 'max-lg:hidden'}`}>
         <div className="space-y-2">
           <Label htmlFor="classification">Classification</Label>
           <Select
@@ -119,6 +129,23 @@ export function ObservationFilters({ filters, onChange, resultCount }: Observati
                   {label}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="dataSource">Data Source</Label>
+          <Select
+            value={filters.dataSource || 'all'}
+            onValueChange={handleDataSourceChange}
+          >
+            <SelectTrigger id="dataSource">
+              <SelectValue placeholder="All sources" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All sources</SelectItem>
+              <SelectItem value="user">User Reports</SelectItem>
+              <SelectItem value="external">External Sources</SelectItem>
             </SelectContent>
           </Select>
         </div>
