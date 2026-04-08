@@ -13,14 +13,18 @@ import { LiveIRUVMonitor } from '@/components/LiveIRUVMonitor'
 import { ObservationFilters, type ObservationFilterOptions } from '@/components/ObservationFilters'
 import { ExportObservationsDialog } from '@/components/ExportObservationsDialog'
 import { ExternalDataManager } from '@/components/ExternalDataManager'
+import { DataSourceTogglePanel } from '@/components/DataSourceTogglePanel'
+import { DataSourceStats } from '@/components/DataSourceStats'
 import { filterObservations } from '@/lib/observation-filters'
-import { MapTrifold, Stack, TestTube, Handshake, Gear, Plus, Download, Fire, Database } from '@phosphor-icons/react'
+import { EXTERNAL_DATA_SOURCES } from '@/lib/external-sources'
+import { MapTrifold, Stack, TestTube, Handshake, Gear, Plus, Download, Fire } from '@phosphor-icons/react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useIsMobile } from '@/hooks/use-mobile'
 
 function App() {
   const [observations, setObservations] = useKV<Observation[]>('observations', [])
   const [externalObservations, setExternalObservations] = useKV<Observation[]>('external-observations', [])
+  const [activeSourceIds, setActiveSourceIds] = useKV<string[]>('active-source-ids', EXTERNAL_DATA_SOURCES.filter(s => s.enabled).map(s => s.id))
   const [activeTab, setActiveTab] = useState('map')
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [isExportOpen, setIsExportOpen] = useState(false)
@@ -87,17 +91,34 @@ function App() {
 
   const safeObservations = observations || []
   const safeExternalObservations = externalObservations || []
+  const safeActiveSourceIds = activeSourceIds || []
   
   const allObservations = useMemo(() => {
     if (showExternalData) {
-      return [...safeObservations, ...safeExternalObservations]
+      const filteredExternalObs = safeExternalObservations.filter((obs) => {
+        const externalSource = (obs as any).externalSource
+        if (!externalSource?.sourceId) return true
+        return safeActiveSourceIds.includes(externalSource.sourceId)
+      })
+      return [...safeObservations, ...filteredExternalObs]
     }
     return safeObservations
-  }, [safeObservations, safeExternalObservations, showExternalData])
+  }, [safeObservations, safeExternalObservations, showExternalData, safeActiveSourceIds])
   
   const filteredObservations = useMemo(() => {
     return filterObservations(allObservations, filters)
   }, [allObservations, filters])
+  
+  const handleToggleSource = (sourceId: string, enabled: boolean) => {
+    setActiveSourceIds((current) => {
+      const currentIds = current || []
+      if (enabled) {
+        return [...currentIds, sourceId]
+      } else {
+        return currentIds.filter(id => id !== sourceId)
+      }
+    })
+  }
 
   const handleNewReport = (report: Observation) => {
     setObservations((current) => [report, ...(current || [])])
@@ -194,19 +215,17 @@ function App() {
                   onCheckedChange={setShowHeatmap}
                 />
               </div>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-card border border-border rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <Database size={20} weight="fill" className="text-accent" />
-                  <Label htmlFor="external-toggle" className="text-sm font-medium cursor-pointer">
-                    Show External Data Sources
-                  </Label>
-                </div>
-                <Switch
-                  id="external-toggle"
-                  checked={showExternalData}
-                  onCheckedChange={setShowExternalData}
-                />
-              </div>
+              
+              <DataSourceTogglePanel
+                dataSources={EXTERNAL_DATA_SOURCES}
+                activeSourceIds={safeActiveSourceIds}
+                onToggleSource={handleToggleSource}
+              />
+              
+              <DataSourceStats
+                observations={allObservations}
+                dataSources={EXTERNAL_DATA_SOURCES}
+              />
               <div className="flex-1 rounded-lg overflow-hidden border border-border shadow-lg">
                 <MapView
                   observations={filteredObservations}
