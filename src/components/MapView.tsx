@@ -3,6 +3,8 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.heat'
 import type { Location, Observation } from '@/lib/types'
+import { getSourceById } from '@/lib/external-sources'
+import { MapLegend } from '@/components/MapLegend'
 
 interface MapViewProps {
   observations: Observation[]
@@ -12,6 +14,7 @@ interface MapViewProps {
   onMarkerClick?: (observation: Observation) => void
   showHeatmap?: boolean
   selectedObservation?: string | null
+  showExternalData?: boolean
 }
 
 export function MapView({
@@ -22,6 +25,7 @@ export function MapView({
   onMarkerClick,
   showHeatmap = false,
   selectedObservation,
+  showExternalData = true,
 }: MapViewProps) {
   const mapRef = useRef<L.Map | null>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -92,21 +96,28 @@ export function MapView({
         },
       }).addTo(mapRef.current)
     } else {
-      const customIcon = L.divIcon({
-        className: 'custom-marker',
-        html: `
-          <div class="relative">
-            <div class="absolute -translate-x-1/2 -translate-y-full">
-              <div class="pulse-dot w-6 h-6 rounded-full bg-accent border-2 border-background shadow-lg"></div>
-              <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-accent-foreground"></div>
-            </div>
-          </div>
-        `,
-        iconSize: [24, 24],
-        iconAnchor: [12, 24],
-      })
-
       observations.forEach((obs) => {
+        const externalSource = (obs as any).externalSource
+        const sourceId = externalSource?.sourceId
+        const source = sourceId ? getSourceById(sourceId) : null
+        
+        const markerColor = source?.color || 'oklch(0.75 0.15 200)'
+        const isExternal = !!externalSource
+        
+        const customIcon = L.divIcon({
+          className: 'custom-marker',
+          html: `
+            <div class="relative">
+              <div class="absolute -translate-x-1/2 -translate-y-full">
+                <div class="pulse-dot w-6 h-6 rounded-full border-2 shadow-lg" style="background-color: ${markerColor}; border-color: rgb(20, 25, 40);"></div>
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full" style="background-color: ${isExternal ? 'white' : 'rgb(20, 25, 40)'};"></div>
+              </div>
+            </div>
+          `,
+          iconSize: [24, 24],
+          iconAnchor: [12, 24],
+        })
+
         const marker = L.marker([obs.location.lat, obs.location.lng], {
           icon: customIcon,
         })
@@ -131,6 +142,8 @@ export function MapView({
   }, [center, zoom])
 
   return (
-    <div ref={mapContainerRef} className="w-full h-full map-container" />
+    <div ref={mapContainerRef} className="w-full h-full map-container relative">
+      <MapLegend showUserReports={true} showExternalData={showExternalData} />
+    </div>
   )
 }

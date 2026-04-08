@@ -36,7 +36,7 @@ function App() {
   
   useEffect(() => {
     const loadInitialExternalData = async () => {
-      const { fetchNUFORCData, fetchUFOstalkerData, convertExternalToObservation, getSourceById } = await import('@/lib/external-sources')
+      const { fetchNUFORCData, fetchUFOstalkerData, fetchEnigmaLabsData, fetchKaggleUFOData, convertExternalToObservation, getSourceById } = await import('@/lib/external-sources')
       
       const existingData = externalObservations || []
       if (existingData.length > 0) {
@@ -44,13 +44,17 @@ function App() {
       }
       
       try {
-        const [nuforcData, stalkerData] = await Promise.all([
+        const [nuforcData, stalkerData, enigmaData, kaggleData] = await Promise.all([
           fetchNUFORCData(100),
-          fetchUFOstalkerData(50)
+          fetchUFOstalkerData(50),
+          fetchEnigmaLabsData(75),
+          fetchKaggleUFOData(100)
         ])
         
         const nuforcSource = getSourceById('nuforc-api')
         const stalkerSource = getSourceById('ufostalker')
+        const enigmaSource = getSourceById('enigma-labs')
+        const kaggleSource = getSourceById('kaggle-ufo')
         
         const allExternalObs = []
         
@@ -60,6 +64,14 @@ function App() {
         
         if (stalkerSource && stalkerData.length > 0) {
           allExternalObs.push(...stalkerData.map(ext => convertExternalToObservation(ext, stalkerSource)))
+        }
+
+        if (enigmaSource && enigmaData.length > 0) {
+          allExternalObs.push(...enigmaData.map(ext => convertExternalToObservation(ext, enigmaSource)))
+        }
+
+        if (kaggleSource && kaggleData.length > 0) {
+          allExternalObs.push(...kaggleData.map(ext => convertExternalToObservation(ext, kaggleSource)))
         }
         
         if (allExternalObs.length > 0) {
@@ -203,6 +215,7 @@ function App() {
                   onMarkerClick={handleMarkerClick}
                   selectedObservation={selectedObservation?.id}
                   showHeatmap={showHeatmap}
+                  showExternalData={showExternalData}
                 />
               </div>
             </TabsContent>
