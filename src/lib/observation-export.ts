@@ -1,4 +1,5 @@
 import type { Observation } from '@/lib/types'
+import { fetchElevation, fetchWeather, formatElevation, windDirectionToCompass, type ElevationData, type WeatherData } from '@/lib/elevation-service'
 
 export type ObservationExportFormat = 'csv' | 'json'
 
@@ -6,6 +7,13 @@ interface ObservationExportOptions {
   format: ObservationExportFormat
   filename?: string
   includeSensorData?: boolean
+  includeElevationData?: boolean
+  includeWeatherData?: boolean
+}
+
+interface EnrichedObservation extends Observation {
+  elevationData?: ElevationData
+  weatherData?: WeatherData | null
 }
 
 function downloadFile(content: string, filename: string, mimeType: string) {
@@ -48,10 +56,15 @@ function arrayToCSV(data: any[], headers: string[]): string {
   return rows.join('\n')
 }
 
-export function exportObservations(
+export async function exportObservations(
   observations: Observation[],
-  options: ObservationExportOptions = { format: 'csv', includeSensorData: false }
-): void {
+  options: ObservationExportOptions = { 
+    format: 'csv', 
+    includeSensorData: false,
+    includeElevationData: false,
+    includeWeatherData: false
+  }
+): Promise<void> {
   if (!observations || observations.length === 0) {
     return
   }
@@ -59,11 +72,39 @@ export function exportObservations(
   const timestamp = Date.now()
   const filename = options.filename || `observations-${timestamp}.${options.format}`
   
+  let enrichedObservations: EnrichedObservation[] = observations
+
+  if (options.includeElevationData || options.includeWeatherData) {
+    enrichedObservations = await Promise.all(
+      observations.map(async (obs) => {
+        const enriched: EnrichedObservation = { ...obs }
+        
+        if (options.includeElevationData) {
+          try {
+            enriched.elevationData = await fetchElevation(obs.location)
+          } catch (error) {
+            console.warn(`Failed to fetch elevation for observation ${obs.id}`, error)
+          }
+        }
+        
+        if (options.includeWeatherData) {
+          try {
+            enriched.weatherData = await fetchWeather(obs.location)
+          } catch (error) {
+            console.warn(`Failed to fetch weather for observation ${obs.id}`, error)
+          }
+        }
+        
+        return enriched
+      })
+    )
+  }
+  
   if (options.format === 'json') {
     const data = {
       exportedAt: formatTimestamp(timestamp),
-      totalObservations: observations.length,
-      observations: observations.map((obs) => ({
+      totalObservations: enrichedObservations.length,
+      observations: enrichedObservations.map((obs) => ({
         id: obs.id,
         title: obs.title,
         description: obs.description,
@@ -76,6 +117,25 @@ export function exportObservations(
         locationMethod: obs.locationMethod,
         locationAccuracy: obs.locationAccuracy,
         altitude: obs.altitude,
+        elevation: options.includeElevationData && obs.elevationData ? {
+          elevation: obs.elevationData.elevation,
+          elevationFormatted: formatElevation(obs.elevationData.elevation),
+          resolution: obs.elevationData.resolution,
+          source: obs.elevationData.source,
+        } : undefined,
+        weather: options.includeWeatherData && obs.weatherData ? {
+          temperature: obs.weatherData.temperature,
+          humidity: obs.weatherData.humidity,
+          pressure: obs.weatherData.pressure,
+          windSpeed: obs.weatherData.windSpeed,
+          windDirection: obs.weatherData.windDirection,
+          windDirectionCompass: windDirectionToCompass(obs.weatherData.windDirection),
+          conditions: obs.weatherData.conditions,
+          cloudCover: obs.weatherData.cloudCover,
+          visibility: obs.weatherData.visibility,
+          precipitation: obs.weatherData.precipitation,
+          source: obs.weatherData.source,
+        } : undefined,
         duration: obs.duration,
         isAnonymous: obs.isAnonymous,
         submittedClassification: obs.submittedClassification,
@@ -95,7 +155,7 @@ export function exportObservations(
     
     downloadFile(JSON.stringify(data, null, 2), filename, 'application/json')
   } else {
-    const flattenedData = observations.map((obs) => ({
+    const flattenedData = enrichedObservations.map((obs) => ({
       id: obs.id,
       title: obs.title,
       description: obs.description,
@@ -106,6 +166,20 @@ export function exportObservations(
       locationMethod: obs.locationMethod,
       locationAccuracy: obs.locationAccuracy,
       altitude: obs.altitude || '',
+      elevation: obs.elevationData?.elevation ?? '',
+      elevationFormatted: obs.elevationData ? formatElevation(obs.elevationData.elevation) : '',
+      elevationSource: obs.elevationData?.source || '',
+      temperature: obs.weatherData?.temperature ?? '',
+      humidity: obs.weatherData?.humidity ?? '',
+      pressure: obs.weatherData?.pressure ?? '',
+      windSpeed: obs.weatherData?.windSpeed ?? '',
+      windDirection: obs.weatherData?.windDirection ?? '',
+      windDirectionCompass: obs.weatherData ? windDirectionToCompass(obs.weatherData.windDirection) : '',
+      weatherConditions: obs.weatherData?.conditions || '',
+      cloudCover: obs.weatherData?.cloudCover ?? '',
+      weatherVisibility: obs.weatherData?.visibility ?? '',
+      precipitation: obs.weatherData?.precipitation ?? '',
+      weatherSource: obs.weatherData?.source || '',
       duration: obs.duration || '',
       isAnonymous: obs.isAnonymous,
       submittedClassification: obs.submittedClassification || '',
@@ -133,6 +207,20 @@ export function exportObservations(
       'locationMethod',
       'locationAccuracy',
       'altitude',
+      'elevation',
+      'elevationFormatted',
+      'elevationSource',
+      'temperature',
+      'humidity',
+      'pressure',
+      'windSpeed',
+      'windDirection',
+      'windDirectionCompass',
+      'weatherConditions',
+      'cloudCover',
+      'weatherVisibility',
+      'precipitation',
+      'weatherSource',
       'duration',
       'isAnonymous',
       'submittedClassification',

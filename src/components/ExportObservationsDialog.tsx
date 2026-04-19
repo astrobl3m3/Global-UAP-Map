@@ -31,12 +31,18 @@ export function ExportObservationsDialog({
 }: ExportObservationsDialogProps) {
   const [format, setFormat] = useState<ObservationExportFormat>('csv')
   const [includeSensorData, setIncludeSensorData] = useState(false)
+  const [includeElevationData, setIncludeElevationData] = useState(true)
+  const [includeWeatherData, setIncludeWeatherData] = useState(true)
+  const [isExporting, setIsExporting] = useState(false)
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    setIsExporting(true)
     try {
-      exportObservations(observations, {
+      await exportObservations(observations, {
         format,
         includeSensorData,
+        includeElevationData,
+        includeWeatherData,
       })
 
       toast.success('Export complete', {
@@ -48,6 +54,8 @@ export function ExportObservationsDialog({
       toast.error('Export failed', {
         description: 'Failed to export observations. Please try again.',
       })
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -126,20 +134,68 @@ export function ExportObservationsDialog({
             </div>
           )}
 
-          <div className="p-3 rounded-lg bg-muted/50 border text-sm">
+          <div className="space-y-3">
+            <Label>Environmental Data</Label>
+            <div className="space-y-2">
+              <div className="flex items-start space-x-2 p-3 rounded-lg border">
+                <Checkbox
+                  id="include-elevation"
+                  checked={includeElevationData}
+                  onCheckedChange={(checked) => setIncludeElevationData(checked === true)}
+                />
+                <div className="flex-1">
+                  <Label
+                    htmlFor="include-elevation"
+                    className="cursor-pointer font-medium"
+                  >
+                    Include elevation data
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Fetch and include terrain elevation for each observation location
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-2 p-3 rounded-lg border">
+                <Checkbox
+                  id="include-weather"
+                  checked={includeWeatherData}
+                  onCheckedChange={(checked) => setIncludeWeatherData(checked === true)}
+                />
+                <div className="flex-1">
+                  <Label
+                    htmlFor="include-weather"
+                    className="cursor-pointer font-medium"
+                  >
+                    Include weather data
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Fetch and include current weather conditions for each observation location
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-lg bg-muted/50 border text-sm space-y-2">
             <p className="text-muted-foreground">
               <strong className="text-foreground">Privacy notice:</strong> Exported data includes all information from selected observations. Handle with care and respect user privacy.
             </p>
+            {(includeElevationData || includeWeatherData) && (
+              <p className="text-muted-foreground">
+                <strong className="text-foreground">Note:</strong> Environmental data will be fetched in real-time during export. This may take a few moments for large datasets.
+              </p>
+            )}
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isExporting}>
             Cancel
           </Button>
-          <Button onClick={handleExport} className="gap-2">
+          <Button onClick={handleExport} className="gap-2" disabled={isExporting}>
             <Download size={18} weight="bold" />
-            Export {format.toUpperCase()}
+            {isExporting ? 'Exporting...' : `Export ${format.toUpperCase()}`}
           </Button>
         </DialogFooter>
       </DialogContent>
