@@ -2,7 +2,7 @@ import type { Observation } from '@/lib/types'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MapPin, Eye, ChatCircle, Camera, Microphone, ArrowUp, Database } from '@phosphor-icons/react'
+import { MapPin, Eye, ChatCircle, Camera, Microphone, ArrowUp, Database, Mountains } from '@phosphor-icons/react'
 import { formatTimestamp, formatCoordinates, getTopClassification, getClassificationLabel } from '@/lib/helpers'
 import { getSourceById } from '@/lib/external-sources'
 
@@ -72,7 +72,14 @@ export function ObservationCard({ observation, onClick }: ObservationCardProps) 
               </p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <MapPin size={14} weight="fill" />
-                <span className="font-mono">{formatCoordinates(observation.location.lat, observation.location.lng)}</span>
+                <span className="font-mono truncate">{formatCoordinates(observation.location.lat, observation.location.lng)}</span>
+                {observation.altitude && (
+                  <>
+                    <span>•</span>
+                    <Mountains size={14} weight="fill" className="text-accent" />
+                    <span>{observation.altitude.toFixed(0)}m</span>
+                  </>
+                )}
               </div>
             </div>
           </div>

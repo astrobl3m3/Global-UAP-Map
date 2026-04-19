@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AudioPlayer } from '@/components/AudioPlayer'
 import { ClassificationVoting } from '@/components/ClassificationVoting'
-import { MapPin, Eye, Calendar, Link as LinkIcon } from '@phosphor-icons/react'
+import { MapPin, Eye, Calendar, Link as LinkIcon, Mountains } from '@phosphor-icons/react'
 import { formatTimestamp, formatCoordinates, getTopClassification, getClassificationLabel } from '@/lib/helpers'
 
 interface ObservationDetailProps {
@@ -53,9 +53,17 @@ export function ObservationDetail({ observation, open, onOpenChange, onUpdate }:
                   <span>{observation.viewCount} views</span>
                 </div>
 
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin size={16} weight="fill" className="text-accent" />
-                  <span className="font-mono">{formatCoordinates(observation.location.lat, observation.location.lng)}</span>
+                <div className="flex items-start gap-2 text-sm">
+                  <MapPin size={16} weight="fill" className="text-accent shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <span className="font-mono block">{formatCoordinates(observation.location.lat, observation.location.lng)}</span>
+                    {observation.altitude && (
+                      <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                        <Mountains size={14} weight="fill" className="text-accent" />
+                        Elevation: {observation.altitude.toFixed(0)}m
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {observation.isAnonymous ? (

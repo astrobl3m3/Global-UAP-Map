@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MapPin, Crosshair, Camera, VideoCamera, X, Play, Pause, Stop, Image as ImageIcon, Microphone, Gear, MapTrifold, TextColumns, MagnifyingGlass } from '@phosphor-icons/react'
+import { MapPin, Crosshair, Camera, VideoCamera, X, Play, Pause, Stop, Image as ImageIcon, Microphone, Gear, MapTrifold, TextColumns, MagnifyingGlass, Mountains } from '@phosphor-icons/react'
 import { generateId, formatCoordinates } from '@/lib/helpers'
 import { toast } from 'sonner'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -84,12 +84,21 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
     )
   }
 
-  const handleMapClick = (clickedLocation: Location) => {
+  const handleMapClick = async (clickedLocation: Location) => {
     setLocation(clickedLocation)
     setLocationAccuracy(0)
-    setAltitude(undefined)
     setLocationMode('map')
-    toast.success('Location selected on map')
+    
+    const { getElevation } = await import('@/lib/geocoding')
+    const elevation = await getElevation(clickedLocation.lat, clickedLocation.lng)
+    
+    if (elevation !== null) {
+      setAltitude(elevation)
+      toast.success(`Location selected - Elevation: ${elevation}m`)
+    } else {
+      setAltitude(undefined)
+      toast.success('Location selected on map')
+    }
   }
 
   const handleManualLocationSubmit = () => {
@@ -573,24 +582,37 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
               </Tabs>
 
               {location && (
-                <div className="p-3 bg-secondary rounded-lg flex items-start gap-2">
-                  <MapPin size={18} weight="fill" className="mt-0.5 text-accent" />
-                  <div className="flex-1">
-                    <p className="font-mono text-sm">{formatCoordinates(location.lat, location.lng)}</p>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      Set via: {locationMode}
-                    </p>
-                    {altitude && (
-                      <p className="text-xs text-muted-foreground">
-                        Altitude: {altitude.toFixed(0)}m
+                <div className="p-3 bg-secondary rounded-lg">
+                  <div className="flex items-start gap-2 mb-2">
+                    <MapPin size={18} weight="fill" className="mt-0.5 text-accent shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-mono text-sm">{formatCoordinates(location.lat, location.lng)}</p>
+                      <p className="text-xs text-muted-foreground capitalize">
+                        Set via: {locationMode}
                       </p>
-                    )}
-                    {locationAccuracy > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Accuracy: ±{locationAccuracy.toFixed(0)}m
-                      </p>
-                    )}
+                    </div>
                   </div>
+                  
+                  {(altitude !== undefined || locationAccuracy > 0) && (
+                    <div className="flex gap-3 pt-2 border-t border-border/50">
+                      {altitude !== undefined && (
+                        <div className="flex items-center gap-1.5">
+                          <Mountains size={16} weight="fill" className="text-accent" />
+                          <span className="text-xs font-medium">
+                            {altitude.toFixed(0)}m
+                          </span>
+                          <span className="text-xs text-muted-foreground">elevation</span>
+                        </div>
+                      )}
+                      {locationAccuracy > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground">
+                            ±{locationAccuracy.toFixed(0)}m accuracy
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
