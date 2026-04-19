@@ -18,6 +18,7 @@ import { DataSourceTogglePanel } from '@/components/DataSourceTogglePanel'
 import { DataSourceStats } from '@/components/DataSourceStats'
 import { DataRefreshControl } from '@/components/DataRefreshControl'
 import { AdvancedFilterPanel, applyAdvancedFilters, type AdvancedFilterOptions } from '@/components/AdvancedFilterPanel'
+import { TopographicLayerControl, type TopoLayerType } from '@/components/TopographicLayerControl'
 import { filterObservations } from '@/lib/observation-filters'
 import { EXTERNAL_DATA_SOURCES } from '@/lib/external-sources'
 import { MapTrifold, Stack, TestTube, Handshake, Gear, Plus, Download, Fire, CaretDown, CaretUp } from '@phosphor-icons/react'
@@ -45,11 +46,13 @@ function App() {
     classifications: [],
     hasMedia: 'all',
     hasSensorData: 'all',
+    elevationRange: 'all',
   })
   const [filters, setFilters] = useState<ObservationFilterOptions>({
     dateRange: 'all',
     sortBy: 'newest',
   })
+  const [topoLayer, setTopoLayer] = useState<TopoLayerType>('none')
   const isMobile = useIsMobile()
   
   useEffect(() => {
@@ -254,6 +257,11 @@ function App() {
                 </div>
               </Collapsible>
               
+              <TopographicLayerControl
+                activeLayer={topoLayer}
+                onLayerChange={setTopoLayer}
+              />
+              
               <AdvancedFilterPanel
                 filters={advancedFilters}
                 onChange={setAdvancedFilters}
@@ -287,6 +295,7 @@ function App() {
                   selectedObservation={selectedObservation?.id}
                   showHeatmap={showHeatmap}
                   showExternalData={showExternalData}
+                  topoLayer={topoLayer}
                 />
               </div>
             </TabsContent>

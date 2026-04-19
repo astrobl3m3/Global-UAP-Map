@@ -5,6 +5,7 @@ import 'leaflet.heat'
 import type { Location, Observation } from '@/lib/types'
 import { getSourceById } from '@/lib/external-sources'
 import { MapLegend } from '@/components/MapLegend'
+import type { TopoLayerType } from '@/components/TopographicLayerControl'
 
 interface MapViewProps {
   observations: Observation[]
@@ -15,6 +16,7 @@ interface MapViewProps {
   showHeatmap?: boolean
   selectedObservation?: string | null
   showExternalData?: boolean
+  topoLayer?: TopoLayerType
 }
 
 export function MapView({
@@ -26,11 +28,14 @@ export function MapView({
   showHeatmap = false,
   selectedObservation,
   showExternalData = true,
+  topoLayer = 'none',
 }: MapViewProps) {
   const mapRef = useRef<L.Map | null>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const markersRef = useRef<Map<string, L.Marker>>(new Map())
   const heatLayerRef = useRef<any>(null)
+  const baseTileLayerRef = useRef<L.TileLayer | null>(null)
+  const topoTileLayerRef = useRef<L.TileLayer | null>(null)
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return
@@ -39,10 +44,12 @@ export function MapView({
       zoomControl: true,
     }).setView([center.lat, center.lng], zoom)
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const baseLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19,
     }).addTo(map)
+    
+    baseTileLayerRef.current = baseLayer
 
     if (onMapClick) {
       map.on('click', (e: L.LeafletMouseEvent) => {
@@ -58,8 +65,49 @@ export function MapView({
     return () => {
       map.remove()
       mapRef.current = null
+      baseTileLayerRef.current = null
+      topoTileLayerRef.current = null
     }
   }, [])
+  
+  useEffect(() => {
+    if (!mapRef.current) return
+    
+    if (topoTileLayerRef.current) {
+      mapRef.current.removeLayer(topoTileLayerRef.current)
+      topoTileLayerRef.current = null
+    }
+    
+    if (topoLayer !== 'none') {
+      let tileUrl = ''
+      let attribution = ''
+      
+      switch (topoLayer) {
+        case 'terrain':
+          tileUrl = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+          attribution = '© OpenTopoMap contributors'
+          break
+        case 'contours':
+          tileUrl = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+          attribution = '© OpenTopoMap contributors'
+          break
+        case 'satellite':
+          tileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+          attribution = '© Esri'
+          break
+      }
+      
+      if (tileUrl) {
+        const topoLayer = L.tileLayer(tileUrl, {
+          attribution,
+          maxZoom: 17,
+          opacity: 0.7,
+        }).addTo(mapRef.current)
+        
+        topoTileLayerRef.current = topoLayer
+      }
+    }
+  }, [topoLayer])
 
   useEffect(() => {
     if (!mapRef.current) return

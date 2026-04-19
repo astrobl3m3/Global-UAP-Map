@@ -20,6 +20,7 @@ export interface AdvancedFilterOptions {
   classifications: string[]
   hasMedia: 'all' | 'yes' | 'no'
   hasSensorData: 'all' | 'yes' | 'no'
+  elevationRange?: 'all' | 'sea-level' | 'low' | 'moderate' | 'high' | 'mountain' | 'high-mountain' | 'very-high'
   location?: { lat: number; lng: number; radiusKm: number }
 }
 
@@ -63,6 +64,7 @@ export function AdvancedFilterPanel({
       classifications: [],
       hasMedia: 'all',
       hasSensorData: 'all',
+      elevationRange: 'all',
     })
   }
   
@@ -73,6 +75,7 @@ export function AdvancedFilterPanel({
     filters.classifications.length > 0,
     !filters.includeUserReports || !filters.includeExternalData,
     filters.selectedSources.length < dataSources.length,
+    filters.elevationRange && filters.elevationRange !== 'all',
   ].filter(Boolean).length
   
   return (
@@ -220,6 +223,31 @@ export function AdvancedFilterPanel({
                 </Select>
               </div>
             </div>
+
+            <div className="p-3 rounded-lg border border-border bg-muted/30 space-y-3">
+              <h4 className="font-medium text-sm">Elevation Range</h4>
+              <Select
+                value={filters.elevationRange || 'all'}
+                onValueChange={(value: any) => updateFilter('elevationRange', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Elevations</SelectItem>
+                  <SelectItem value="sea-level">Below Sea Level</SelectItem>
+                  <SelectItem value="low">Low (0-200m)</SelectItem>
+                  <SelectItem value="moderate">Moderate (200-500m)</SelectItem>
+                  <SelectItem value="high">High (500-1000m)</SelectItem>
+                  <SelectItem value="mountain">Mountain (1000-2000m)</SelectItem>
+                  <SelectItem value="high-mountain">High Mountain (2000-3000m)</SelectItem>
+                  <SelectItem value="very-high">Very High (3000m+)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Filter observations by terrain elevation
+              </p>
+            </div>
             
             {activeFilterCount > 0 && (
               <Button
@@ -289,6 +317,32 @@ export function applyAdvancedFilters(
     filtered = filtered.filter(obs => !!obs.sensorData)
   } else if (filters.hasSensorData === 'no') {
     filtered = filtered.filter(obs => !obs.sensorData)
+  }
+  
+  if (filters.elevationRange && filters.elevationRange !== 'all') {
+    filtered = filtered.filter(obs => {
+      const altitude = obs.altitude
+      if (altitude === undefined) return false
+      
+      switch (filters.elevationRange) {
+        case 'sea-level':
+          return altitude < 0
+        case 'low':
+          return altitude >= 0 && altitude < 200
+        case 'moderate':
+          return altitude >= 200 && altitude < 500
+        case 'high':
+          return altitude >= 500 && altitude < 1000
+        case 'mountain':
+          return altitude >= 1000 && altitude < 2000
+        case 'high-mountain':
+          return altitude >= 2000 && altitude < 3000
+        case 'very-high':
+          return altitude >= 3000
+        default:
+          return true
+      }
+    })
   }
   
   if (filters.sortBy === 'newest') {
