@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AudioPlayer } from '@/components/AudioPlayer'
 import { ClassificationVoting } from '@/components/ClassificationVoting'
+import { HistoricalWeatherDisplay } from '@/components/HistoricalWeatherDisplay'
 import { MapPin, Eye, Calendar, Link as LinkIcon, Mountains } from '@phosphor-icons/react'
 import { formatTimestamp, formatCoordinates, getTopClassification, getClassificationLabel } from '@/lib/helpers'
 
@@ -109,6 +110,12 @@ export function ObservationDetail({ observation, open, onOpenChange, onUpdate }:
               <h3 className="font-semibold mb-2">Description</h3>
               <p className="text-sm leading-relaxed whitespace-pre-wrap">{observation.description}</p>
             </div>
+
+            {observation.historicalWeather && (
+              <div>
+                <HistoricalWeatherDisplay weather={observation.historicalWeather} compact={false} showTimestamp={true} />
+              </div>
+            )}
 
             {allMedia.length > 0 && (
               <div>

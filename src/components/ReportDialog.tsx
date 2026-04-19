@@ -363,7 +363,7 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!location) {
       toast.error('Please set a location')
       return
@@ -380,6 +380,21 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
     }
 
     const now = Date.now()
+    
+    let historicalWeather = undefined
+    try {
+      const { fetchHistoricalWeather } = await import('@/lib/elevation-service')
+      const weatherData = await fetchHistoricalWeather(location, now)
+      if (weatherData) {
+        historicalWeather = {
+          ...weatherData,
+          fetchedAt: Date.now()
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to fetch historical weather for observation', error)
+    }
+    
     const observation: Observation = {
       id: generateId(),
       userId: undefined,
@@ -396,6 +411,7 @@ export function ReportDialog({ open, onOpenChange, onSubmit }: ReportDialogProps
       videos,
       audio: audioFiles,
       sensorData,
+      historicalWeather,
       communityClassifications: [],
       moderationStatus: 'approved',
       viewCount: 0,

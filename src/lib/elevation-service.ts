@@ -125,6 +125,90 @@ export async function fetchWeather(location: Location): Promise<WeatherData | nu
   return null
 }
 
+export async function fetchHistoricalWeather(location: Location, timestamp: number): Promise<WeatherData | null> {
+  const date = new Date(timestamp)
+  const today = new Date()
+  
+  const daysDiff = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+  
+  if (daysDiff < 0) {
+    return null
+  }
+  
+  if (daysDiff === 0) {
+    return fetchWeather(location)
+  }
+  
+  const dateStr = date.toISOString().split('T')[0]
+  const cacheKey = `${getCacheKey(location.lat, location.lng, 2)}-${dateStr}`
+  
+  const cached = WEATHER_CACHE.get(cacheKey)
+  if (cached && cached.expires > Date.now()) {
+    return cached.data
+  }
+
+  try {
+    const response = await fetch(
+      `https://archive-api.open-meteo.com/v1/archive?latitude=${location.lat}&longitude=${location.lng}&start_date=${dateStr}&end_date=${dateStr}&hourly=temperature_2m,relative_humidity_2m,pressure_msl,wind_speed_10m,wind_direction_10m,cloud_cover,visibility,precipitation&temperature_unit=celsius&wind_speed_unit=kmh`
+    )
+    
+    if (!response.ok) {
+      throw new Error('Historical weather API request failed')
+    }
+    
+    const data = await response.json()
+    
+    if (data.hourly && data.hourly.time && data.hourly.time.length > 0) {
+      const targetHour = date.getHours()
+      
+      let closestIndex = 0
+      let minDiff = 24
+      
+      data.hourly.time.forEach((timeStr: string, index: number) => {
+        const hour = new Date(timeStr).getHours()
+        const diff = Math.abs(hour - targetHour)
+        if (diff < minDiff) {
+          minDiff = diff
+          closestIndex = index
+        }
+      })
+      
+      const hourly = data.hourly
+      
+      const conditions = getWeatherConditions(
+        hourly.cloud_cover?.[closestIndex] || 0,
+        hourly.precipitation?.[closestIndex] || 0,
+        hourly.visibility?.[closestIndex] || 10000
+      )
+      
+      const weatherData: WeatherData = {
+        temperature: hourly.temperature_2m?.[closestIndex] || 0,
+        humidity: hourly.relative_humidity_2m?.[closestIndex] || 0,
+        pressure: hourly.pressure_msl?.[closestIndex] || 1013,
+        windSpeed: hourly.wind_speed_10m?.[closestIndex] || 0,
+        windDirection: hourly.wind_direction_10m?.[closestIndex] || 0,
+        conditions,
+        cloudCover: hourly.cloud_cover?.[closestIndex] || 0,
+        visibility: hourly.visibility?.[closestIndex] || 10000,
+        precipitation: hourly.precipitation?.[closestIndex] || 0,
+        timestamp,
+        source: 'open-meteo-archive'
+      }
+      
+      WEATHER_CACHE.set(cacheKey, {
+        data: weatherData,
+        expires: Date.now() + (CACHE_DURATION * 48)
+      })
+      
+      return weatherData
+    }
+  } catch (error) {
+    console.warn('Failed to fetch historical weather data', error)
+  }
+
+  return null
+}
+
 function getWeatherConditions(cloudCover: number, precipitation: number, visibility: number): string {
   if (precipitation > 5) return 'Heavy Rain'
   if (precipitation > 1) return 'Light Rain'

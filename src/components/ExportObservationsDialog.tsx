@@ -167,10 +167,10 @@ export function ExportObservationsDialog({
                     htmlFor="include-weather"
                     className="cursor-pointer font-medium"
                   >
-                    Include weather data
+                    Include historical weather data
                   </Label>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Fetch and include current weather conditions for each observation location
+                    Include weather conditions at the time of observation (historical data for past observations)
                   </p>
                 </div>
               </div>

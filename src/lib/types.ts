@@ -68,11 +68,27 @@ export interface Observation {
   visibility: 'public' | 'unlisted' | 'private'
   reportVersion: string
   updatedAt: number
+  historicalWeather?: HistoricalWeatherData
 }
 
 export interface Location {
   lat: number
   lng: number
+}
+
+export interface HistoricalWeatherData {
+  temperature: number
+  humidity: number
+  pressure: number
+  windSpeed: number
+  windDirection: number
+  conditions: string
+  cloudCover: number
+  visibility: number
+  precipitation: number
+  timestamp: number
+  source: string
+  fetchedAt: number
 }
 
 export interface MediaFile {

@@ -1,5 +1,5 @@
 import type { Observation } from '@/lib/types'
-import { fetchElevation, fetchWeather, formatElevation, windDirectionToCompass, type ElevationData, type WeatherData } from '@/lib/elevation-service'
+import { fetchElevation, fetchHistoricalWeather, formatElevation, windDirectionToCompass, type ElevationData, type WeatherData } from '@/lib/elevation-service'
 
 export type ObservationExportFormat = 'csv' | 'json'
 
@@ -89,7 +89,11 @@ export async function exportObservations(
         
         if (options.includeWeatherData) {
           try {
-            enriched.weatherData = await fetchWeather(obs.location)
+            if (obs.historicalWeather) {
+              enriched.weatherData = obs.historicalWeather
+            } else {
+              enriched.weatherData = await fetchHistoricalWeather(obs.location, obs.observedAt)
+            }
           } catch (error) {
             console.warn(`Failed to fetch weather for observation ${obs.id}`, error)
           }
